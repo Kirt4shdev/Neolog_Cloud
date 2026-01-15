@@ -29,3 +29,13 @@ export const SendDeviceActionContract = z.object({
 });
 
 export type SendDeviceActionContract = z.infer<typeof SendDeviceActionContract>;
+
+/**
+ * DeleteDeviceContract - Contrato para eliminar un dispositivo
+ * @property deviceId - ID del dispositivo (UUID)
+ */
+export const DeleteDeviceContract = z.object({
+  deviceId: z.string().uuid({ message: "deviceId must be a valid UUID" }).trim(),
+});
+
+export type DeleteDeviceContract = z.infer<typeof DeleteDeviceContract>;

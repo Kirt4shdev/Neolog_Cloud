@@ -321,6 +321,116 @@
   border-radius: 12px;
 }
 
+/* Danger Zone */
+.dangerZone {
+  border-color: #ff4d4d !important;
+  background: rgba(255, 77, 77, 0.05) !important;
+}
+
+.dangerZone h2 {
+  background: linear-gradient(135deg, #ff4d4d 0%, #ff8080 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dangerText {
+  color: #ff4d4d;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.buttonDanger {
+  padding: 0.75rem 1.5rem;
+  background: #ff4d4d;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(255, 77, 77, 0.3);
+}
+
+.buttonDanger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 77, 77, 0.5);
+  background: #cc3d3d;
+}
+
+.buttonDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmDelete {
+  background: rgba(255, 77, 77, 0.1);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.confirmText {
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.buttonDangerConfirm {
+  padding: 0.75rem 1.5rem;
+  background: #ff4d4d;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(255, 77, 77, 0.3);
+}
+
+.buttonDangerConfirm:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 77, 77, 0.5);
+  background: #cc3d3d;
+}
+
+.buttonDangerConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonCancel {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.buttonCancel:hover:not(:disabled) {
+  background: var(--bg-primary);
+  border-color: rgba(0, 102, 255, 0.3);
+}
+
+.buttonCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header {

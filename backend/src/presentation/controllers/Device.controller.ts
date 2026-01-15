@@ -3,6 +3,7 @@ import { ContextBuilder } from "@presentation/adapters/ContextBuilder";
 import { GetDeviceListUseCase } from "@application/use-cases/device/GetDeviceListUseCase";
 import { GetDeviceDetailUseCase } from "@application/use-cases/device/GetDeviceDetailUseCase";
 import { SendDeviceActionUseCase } from "@application/use-cases/device/SendDeviceActionUseCase";
+import { DeleteDeviceUseCase } from "@application/use-cases/device/DeleteDeviceUseCase";
 import type { Request, Response } from "express";
 
 export class DeviceController {
@@ -70,6 +71,28 @@ export class DeviceController {
     return res.status(200).json({
       message: "Action sent successfully",
       data: actionResult,
+    });
+  }
+
+  /**
+   * Elimina un dispositivo
+   * DELETE /api/admin/neologg/devices/:deviceId
+   */
+  public static async deleteDevice(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
+    const deleteDeviceUseCase = container.resolve(DeleteDeviceUseCase);
+    const ctx = ContextBuilder.build(req, res);
+
+    const deletedDevice = await deleteDeviceUseCase.execute({
+      contract: { deviceId: req.params.deviceId },
+      ctx,
+    });
+
+    return res.status(200).json({
+      message: "Device deleted successfully",
+      data: deletedDevice,
     });
   }
 }

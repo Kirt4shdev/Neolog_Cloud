@@ -32,6 +32,7 @@ import { z } from "zod";
  * - get_device_list: Obtener lista de dispositivos
  * - get_device_detail: Obtener detalle de dispositivo
  * - send_device_action: Enviar acción a dispositivo
+ * - delete_device: Eliminar dispositivo
  * - process_heartbeat: Procesar heartbeat MQTT
  * - process_data: Procesar datos MQTT
  * - process_license: Procesar validación de licencia
@@ -66,6 +67,7 @@ export const EventAction = z.enum([
   "get_device_list",
   "get_device_detail",
   "send_device_action",
+  "delete_device",
   "process_heartbeat",
   "process_data",
   "process_license",

@@ -14,6 +14,8 @@ export function DeviceDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [sendingAction, setSendingAction] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (deviceId) {
@@ -49,6 +51,22 @@ export function DeviceDetailPage() {
       setTimeout(() => setError(null), 3000);
     } finally {
       setSendingAction(false);
+    }
+  };
+
+  const handleDeleteDevice = async () => {
+    if (!deviceId) return;
+
+    try {
+      setDeleting(true);
+      setError(null);
+      await DeviceService.deleteDevice(deviceId);
+      navigate("/admin/devices", { replace: true });
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Error al eliminar dispositivo");
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -238,6 +256,44 @@ export function DeviceDetailPage() {
           <p className={styles.comingSoon}>
             Dashboard con gráficos de InfluxDB - Próximamente
           </p>
+        </div>
+
+        {/* Zona Peligrosa - Eliminar Dispositivo */}
+        <div className={`${styles.card} ${styles.dangerZone}`}>
+          <h2>Zona Peligrosa</h2>
+          <p className={styles.dangerText}>
+            Esta acción es irreversible y eliminará el dispositivo de la base de datos y de Mosquitto.
+          </p>
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className={styles.buttonDanger}
+            >
+              Eliminar Dispositivo
+            </button>
+          ) : (
+            <div className={styles.confirmDelete}>
+              <p className={styles.confirmText}>
+                ¿Estás seguro de que deseas eliminar este dispositivo? Esta acción no se puede deshacer.
+              </p>
+              <div className={styles.confirmButtons}>
+                <button
+                  onClick={handleDeleteDevice}
+                  disabled={deleting}
+                  className={styles.buttonDangerConfirm}
+                >
+                  {deleting ? "Eliminando..." : "Sí, eliminar"}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className={styles.buttonCancel}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

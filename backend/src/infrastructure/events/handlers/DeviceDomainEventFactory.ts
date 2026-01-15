@@ -114,6 +114,33 @@ export class DeviceDomainEventFactory implements IDeviceDomainEventFactory {
     };
   }
 
+  deleteDevice(): DomainApplicationEvent {
+    return {
+      ...this.event,
+      action: "delete_device",
+      table: "devices",
+      isSuccessful: true,
+      endpoint: "/api/admin/neologg/devices/:deviceId",
+      requiredRole: "admin",
+      occurredAt: new Date(),
+      method: "DELETE",
+    };
+  }
+
+  deleteDeviceWithFailure(failureReason?: string): DomainApplicationEvent {
+    return {
+      ...this.event,
+      action: "delete_device",
+      table: "devices",
+      isSuccessful: false,
+      endpoint: "/api/admin/neologg/devices/:deviceId",
+      requiredRole: "admin",
+      occurredAt: new Date(),
+      failureReason: failureReason,
+      method: "DELETE",
+    };
+  }
+
   processHeartbeat(): DomainApplicationEvent {
     return {
       ...this.event,

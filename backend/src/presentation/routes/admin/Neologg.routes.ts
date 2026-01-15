@@ -14,6 +14,7 @@ export class NeologgRoutes {
       "/devices/:deviceId/actions",
       DeviceController.sendDeviceAction
     );
+    neologgRouter.delete("/devices/:deviceId", DeviceController.deleteDevice);
 
     // Provisioning routes
     neologgRouter.get(

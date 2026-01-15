@@ -180,6 +180,109 @@ class MosquittoService {
     Debug.success(`Device ${username} provisioned successfully in Mosquitto`);
     return { result: undefined };
   }
+
+  /**
+   * Elimina un dispositivo de Mosquitto (passwd y ACL)
+   */
+  public async deleteDevice(serialNumber: string): Promise<Result<void>> {
+    try {
+      Debug.info(`Deleting device ${serialNumber} from Mosquitto...`);
+
+      // 1. Eliminar usuario del archivo passwd
+      const deleteUserCommand = `docker exec ${this.containerName} mosquitto_passwd -D ${this.passwdFile} ${serialNumber}`;
+      const deleteUserResult = await execAsync(deleteUserCommand);
+
+      if (deleteUserResult.error) {
+        // Si el error es que el usuario no existe, lo ignoramos
+        if (
+          deleteUserResult.error.message.includes("not found") ||
+          deleteUserResult.error.message.includes("does not exist")
+        ) {
+          Debug.warning(`User ${serialNumber} not found in passwd file, skipping`);
+        } else {
+          Debug.error(`Failed to delete user from passwd: ${deleteUserResult.error.message}`);
+          return {
+            error: {
+              message: `Failed to delete user from passwd: ${deleteUserResult.error.message}`,
+              type: "internalServer",
+            },
+          };
+        }
+      }
+
+      // 2. Eliminar ACL del dispositivo
+      // Leer el archivo ACL actual
+      const readAclCommand = `docker exec ${this.containerName} cat ${this.aclFile}`;
+      const readAclResult = await execAsync(readAclCommand);
+
+      if (readAclResult.error) {
+        Debug.error(`Failed to read ACL file: ${readAclResult.error.message}`);
+        return {
+          error: {
+            message: `Failed to read ACL file: ${readAclResult.error.message}`,
+            type: "internalServer",
+          },
+        };
+      }
+
+      // Filtrar las líneas que NO corresponden a este dispositivo
+      const aclLines = readAclResult.result.split("\n");
+      const filteredLines: string[] = [];
+      let skipUntilNextUser = false;
+
+      for (let i = 0; i < aclLines.length; i++) {
+        const line = aclLines[i].trim();
+
+        // Si encontramos el comentario del dispositivo a eliminar
+        if (line.includes(`# Device: ${serialNumber}`)) {
+          skipUntilNextUser = true;
+          continue;
+        }
+
+        // Si encontramos otro "user" o comentario de dispositivo, dejamos de skip
+        if (skipUntilNextUser && (line.startsWith("user ") || line.startsWith("# Device:"))) {
+          skipUntilNextUser = false;
+        }
+
+        // Si no estamos en modo skip, agregamos la línea
+        if (!skipUntilNextUser) {
+          filteredLines.push(aclLines[i]);
+        }
+      }
+
+      // Escribir el ACL filtrado
+      const newAclContent = filteredLines.join("\n");
+      const writeAclCommand = `docker exec ${this.containerName} sh -c "cat > ${this.aclFile} << 'EOFACL'\n${newAclContent}\nEOFACL"`;
+      const writeAclResult = await execAsync(writeAclCommand);
+
+      if (writeAclResult.error) {
+        Debug.error(`Failed to write ACL file: ${writeAclResult.error.message}`);
+        return {
+          error: {
+            message: `Failed to write ACL file: ${writeAclResult.error.message}`,
+            type: "internalServer",
+          },
+        };
+      }
+
+      // 3. Recargar Mosquitto
+      const reloadResult = await this.reloadMosquitto();
+      if (reloadResult.error) {
+        return reloadResult;
+      }
+
+      Debug.success(`Device ${serialNumber} deleted successfully from Mosquitto`);
+      return { result: undefined };
+    } catch (error: any) {
+      Debug.error(`Failed to delete device from Mosquitto: ${error.message}`);
+      return {
+        error: {
+          message: error.message,
+          type: "internalServer",
+        },
+      };
+    }
+  }
 }
 
 export const mosquittoService = new MosquittoService();

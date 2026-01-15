@@ -186,4 +186,22 @@ export class DeviceRepository implements IDeviceRepository {
 
     return { result: result as { deviceId: string } };
   }
+
+  public async deleteDevice(
+    data: import("@core/device/contracts/DeviceContract").DeleteDeviceContract
+  ): Promise<Result<DeviceListEntity>> {
+    const { error, result } = await database.query({
+      query: "SELECT * FROM delete_device($1)",
+      params: [data.deviceId],
+      single: true,
+      schema: DeviceListEntity,
+      emptyResponseMessageError: "Device not found",
+    });
+
+    if (error) {
+      return { error: new DeviceRepositoryErrorFactory(error).create() };
+    }
+
+    return { result };
+  }
 }

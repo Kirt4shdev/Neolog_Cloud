@@ -47,4 +47,11 @@ export class DeviceService {
     });
     return response.data.data;
   }
+
+  /**
+   * Elimina un dispositivo
+   */
+  static async deleteDevice(deviceId: string): Promise<void> {
+    await axiosInstance.delete(`/api/admin/neologg/devices/${deviceId}`);
+  }
 }

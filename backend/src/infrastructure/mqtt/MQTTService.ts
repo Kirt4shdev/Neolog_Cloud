@@ -278,7 +278,10 @@ class MQTTService {
     qos: 0 | 1 | 2 = MQTT.QOS_1
   ): Promise<Result<void>> {
     return new Promise((resolve) => {
+      Debug.info(`Attempting to publish to ${topic}. Client exists: ${!!this.client}, Connected: ${this.client?.connected}`);
+      
       if (!this.client || !this.client.connected) {
+        Debug.error(`MQTT client not connected. Client exists: ${!!this.client}, Connected: ${this.client?.connected}`);
         resolve({
           error: {
             message: "MQTT client not connected",

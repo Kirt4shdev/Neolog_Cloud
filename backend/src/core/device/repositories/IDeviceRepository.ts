@@ -2,6 +2,7 @@ import type { ProvisionDeviceContract } from "../contracts/ProvisionDeviceContra
 import type {
   SendDeviceActionContract,
   GetDeviceDetailContract,
+  DeleteDeviceContract,
 } from "../contracts/DeviceContract";
 import type {
   DeviceEntity,
@@ -102,4 +103,11 @@ export interface IDeviceRepository {
   getDeviceBySerialNumber(
     serialNumber: string
   ): Promise<Result<{ deviceId: string }>>;
+
+  /**
+   * Elimina un dispositivo del sistema
+   * @param data - ID del dispositivo a eliminar
+   * @returns Promise<Result<DeviceListEntity>>
+   */
+  deleteDevice(data: DeleteDeviceContract): Promise<Result<DeviceListEntity>>;
 }
