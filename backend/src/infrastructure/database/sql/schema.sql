@@ -271,11 +271,11 @@ CREATE TABLE IF NOT EXISTS devices(
 	mac_address VARCHAR(17) NOT NULL,
 	imei VARCHAR(15) NOT NULL,
 	
-	-- Credenciales generadas
+	-- Credenciales generadas (SHA-256 = 64 caracteres hexadecimales)
 	license VARCHAR(64) NOT NULL,
-	root_password VARCHAR(50) NOT NULL,
+	root_password VARCHAR(64) NOT NULL,
 	mqtt_username VARCHAR(50) NOT NULL,
-	mqtt_password VARCHAR(100) NOT NULL,
+	mqtt_password VARCHAR(64) NOT NULL,
 	
 	-- Estado del dispositivo
 	status VARCHAR(20) NOT NULL DEFAULT 'unknown' CHECK (status IN ('online', 'offline', 'unknown')),
