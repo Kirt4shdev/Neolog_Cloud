@@ -105,6 +105,10 @@ class MQTTService {
 
       // Procesar según el tipo de mensaje
       switch (messageType) {
+        case "status":
+          await this.processStatus(serialNumber, message);
+          break;
+
         case MQTT.TOPIC_HEARTBEAT:
           await this.processHeartbeat(serialNumber, message);
           break;
@@ -136,11 +140,12 @@ class MQTTService {
     try {
       const deviceRepository = container.resolve<IDeviceRepository>("IDeviceRepository");
 
-      // Actualizar lastSeenAt del dispositivo
-      await deviceRepository.updateLastSeen(serialNumber);
-
-      // Actualizar estado a online
-      await deviceRepository.updateDeviceStatus(serialNumber, "online");
+      // Actualizar estado a online y last_seen_at
+      await deviceRepository.updateDeviceStatus({
+        serialNumber,
+        status: "online",
+        timestamp: new Date(),
+      });
 
       // Registrar la transmisión
       await deviceRepository.logTransmission({
@@ -160,6 +165,42 @@ class MQTTService {
   }
 
   /**
+   * Procesa cambios de estado LWT (online/offline)
+   */
+  private async processStatus(
+    serialNumber: string,
+    message: string
+  ): Promise<void> {
+    try {
+      // Limpiar y validar: solo "online" u "offline" (sin comillas)
+      const status = message.trim().toLowerCase();
+      
+      if (status !== "online" && status !== "offline") {
+        Debug.warning(`Invalid status value: ${message}`);
+        return;
+      }
+
+      const deviceRepository = container.resolve<IDeviceRepository>("IDeviceRepository");
+
+      // Actualizar el estado del dispositivo en la base de datos
+      const { error } = await deviceRepository.updateDeviceStatus({
+        serialNumber,
+        status: status as "online" | "offline",
+        timestamp: new Date(),
+      });
+
+      if (error) {
+        Debug.error(`Failed to update device status: ${error.message}`);
+        return;
+      }
+
+      Debug.success(`Device ${serialNumber} is now ${status}`);
+    } catch (error: any) {
+      Debug.error(`Error processing status: ${error.message}`);
+    }
+  }
+
+  /**
    * Procesa datos de sensores recibidos de un dispositivo
    */
   private async processData(
@@ -168,6 +209,13 @@ class MQTTService {
   ): Promise<void> {
     try {
       const deviceRepository = container.resolve<IDeviceRepository>("IDeviceRepository");
+
+      // Actualizar last_seen_at
+      await deviceRepository.updateDeviceStatus({
+        serialNumber,
+        status: "online",
+        timestamp: new Date(),
+      });
 
       // Registrar la transmisión en Postgres
       await deviceRepository.logTransmission({
@@ -201,6 +249,13 @@ class MQTTService {
   ): Promise<void> {
     try {
       const deviceRepository = container.resolve<IDeviceRepository>("IDeviceRepository");
+
+      // Actualizar last_seen_at
+      await deviceRepository.updateDeviceStatus({
+        serialNumber,
+        status: "online",
+        timestamp: new Date(),
+      });
 
       // Obtener el device del repositorio
       const { result: deviceInfo } = await deviceRepository.getDeviceBySerialNumber(serialNumber);

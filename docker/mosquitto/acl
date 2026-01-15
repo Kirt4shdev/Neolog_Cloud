@@ -6,32 +6,7 @@
 # Admin user (full access for backend)
 user neologg
 topic readwrite #
+topic read $SYS/#
 
-# Device users will be added dynamically by the backend
-# Pattern: user {SerialNumber}
-#          topic readwrite production/neologg/{SerialNumber}/#
-
-# Device: TEST002
-user TEST002
-topic readwrite production/neologg/TEST002/#
-
-
-# Device: NEOLOGG001
-user NEOLOGG001
-topic readwrite production/neologg/NEOLOGG001/#
-
-
-# Device: NEOLOGG002
-user NEOLOGG002
-topic readwrite production/neologg/NEOLOGG002/#
-
-
-# Device: TEST8825
-user TEST8825
-topic readwrite production/neologg/TEST8825/#
-
-
-# Device: TEST1178
-user TEST1178
-topic readwrite production/neologg/TEST1178/#
-
+# Pattern for device topic access (uses %u as username placeholder)
+pattern readwrite production/neologg/%u/#

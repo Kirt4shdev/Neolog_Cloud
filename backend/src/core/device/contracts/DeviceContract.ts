@@ -39,3 +39,19 @@ export const DeleteDeviceContract = z.object({
 });
 
 export type DeleteDeviceContract = z.infer<typeof DeleteDeviceContract>;
+
+/**
+ * UpdateDeviceStatusContract - Contrato para actualizar el estado de un dispositivo (LWT)
+ * @property serialNumber - Número de serie del dispositivo
+ * @property status - Estado del dispositivo (online, offline)
+ * @property timestamp - Timestamp del evento (opcional, por defecto NOW())
+ */
+export const UpdateDeviceStatusContract = z.object({
+  serialNumber: z.string().trim().min(1, { message: "serialNumber is required" }),
+  status: z.enum(["online", "offline"], {
+    message: "status must be 'online' or 'offline'",
+  }),
+  timestamp: z.date().optional(),
+});
+
+export type UpdateDeviceStatusContract = z.infer<typeof UpdateDeviceStatusContract>;

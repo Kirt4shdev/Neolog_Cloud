@@ -3,6 +3,7 @@ import type {
   SendDeviceActionContract,
   GetDeviceDetailContract,
   DeleteDeviceContract,
+  UpdateDeviceStatusContract,
 } from "../contracts/DeviceContract";
 import type {
   DeviceEntity,
@@ -53,17 +54,6 @@ export interface IDeviceRepository {
   updateLastSeen(serialNumber: string): Promise<Result<void>>;
 
   /**
-   * Actualiza el estado del dispositivo
-   * @param serialNumber - Serial Number del dispositivo
-   * @param status - Nuevo estado
-   * @returns Promise<Result<void>>
-   */
-  updateDeviceStatus(
-    serialNumber: string,
-    status: "online" | "offline" | "unknown"
-  ): Promise<Result<void>>;
-
-  /**
    * Registra una transmisión MQTT recibida
    * @param data - Datos de la transmisión
    * @returns Promise<Result<DeviceTransmissionEntity>>
@@ -110,4 +100,13 @@ export interface IDeviceRepository {
    * @returns Promise<Result<DeviceListEntity>>
    */
   deleteDevice(data: DeleteDeviceContract): Promise<Result<DeviceListEntity>>;
+
+  /**
+   * Actualiza el estado de un dispositivo basado en eventos MQTT (LWT)
+   * @param data - Serial number, status y timestamp
+   * @returns Promise<Result<DeviceListEntity>>
+   */
+  updateDeviceStatus(
+    data: UpdateDeviceStatusContract
+  ): Promise<Result<DeviceListEntity>>;
 }

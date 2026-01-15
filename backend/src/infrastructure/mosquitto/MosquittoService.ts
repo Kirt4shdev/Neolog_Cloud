@@ -192,7 +192,9 @@ class MosquittoService {
       const deleteUserCommand = `docker exec ${this.containerName} mosquitto_passwd -D ${this.passwdFile} ${serialNumber}`;
       const deleteUserResult = await execAsync(deleteUserCommand);
 
-      if (deleteUserResult.error) {
+      // mosquitto_passwd puede devolver warnings en stderr pero aún así funcionar correctamente
+      // Solo fallamos si hay un error real (no warnings de permisos)
+      if (deleteUserResult.error && !deleteUserResult.error.message.includes("Warning:")) {
         // Si el error es que el usuario no existe, lo ignoramos
         if (
           deleteUserResult.error.message.includes("not found") ||
@@ -208,6 +210,8 @@ class MosquittoService {
             },
           };
         }
+      } else {
+        Debug.success(`User ${serialNumber} deleted from passwd file`);
       }
 
       // 2. Eliminar ACL del dispositivo
@@ -228,26 +232,37 @@ class MosquittoService {
       // Filtrar las líneas que NO corresponden a este dispositivo
       const aclLines = readAclResult.result.split("\n");
       const filteredLines: string[] = [];
-      let skipUntilNextUser = false;
+      let isInsideDeviceBlock = false;
 
       for (let i = 0; i < aclLines.length; i++) {
         const line = aclLines[i].trim();
 
-        // Si encontramos el comentario del dispositivo a eliminar
-        if (line.includes(`# Device: ${serialNumber}`)) {
-          skipUntilNextUser = true;
+        // Si encontramos el comentario del dispositivo a eliminar, comenzamos a skipear
+        if (line === `# Device: ${serialNumber}`) {
+          isInsideDeviceBlock = true;
+          continue; // No agregar el comentario
+        }
+
+        // Si estamos dentro del bloque del dispositivo
+        if (isInsideDeviceBlock) {
+          // Si encontramos otro comentario de dispositivo o una línea vacía después del bloque, salimos
+          if (line.startsWith("# Device:") || (line === "" && i + 1 < aclLines.length && aclLines[i + 1].trim().startsWith("# Device:"))) {
+            isInsideDeviceBlock = false;
+            filteredLines.push(aclLines[i]); // Agregar esta línea (es el inicio del siguiente dispositivo o línea vacía)
+            continue;
+          }
+          // Si encontramos el patrón pattern o línea que no es del dispositivo (como "user neologg"), salimos
+          if (line.startsWith("pattern ") || (line.startsWith("user ") && !line.includes(serialNumber))) {
+            isInsideDeviceBlock = false;
+            filteredLines.push(aclLines[i]); // Agregar esta línea (pertenece a otra sección)
+            continue;
+          }
+          // Cualquier otra línea dentro del bloque del dispositivo, la skipeamos
           continue;
         }
 
-        // Si encontramos otro "user" o comentario de dispositivo, dejamos de skip
-        if (skipUntilNextUser && (line.startsWith("user ") || line.startsWith("# Device:"))) {
-          skipUntilNextUser = false;
-        }
-
-        // Si no estamos en modo skip, agregamos la línea
-        if (!skipUntilNextUser) {
-          filteredLines.push(aclLines[i]);
-        }
+        // Si no estamos dentro del bloque del dispositivo, agregamos la línea
+        filteredLines.push(aclLines[i]);
       }
 
       // Escribir el ACL filtrado

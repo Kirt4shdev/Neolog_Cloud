@@ -7,9 +7,9 @@ CREATE OR REPLACE FUNCTION delete_device(
 RETURNS TABLE (
     "deviceId" UUID,
     "serialNumber" VARCHAR,
-    "macAddress" VARCHAR,
-    imei VARCHAR,
     status VARCHAR,
+    "lastSeenAt" TIMESTAMPTZ,
+    "firmwareVersion" VARCHAR,
     "createdAt" TIMESTAMPTZ
 )
 AS $$
@@ -27,9 +27,9 @@ BEGIN
     RETURNING 
         device_id,
         serial_number,
-        mac_address,
-        devices.imei,
         devices.status,
+        last_seen_at,
+        firmware_version,
         created_at
     INTO _deletedDevice;
     
@@ -38,9 +38,9 @@ BEGIN
     SELECT 
         _deletedDevice.device_id AS "deviceId",
         _deletedDevice.serial_number AS "serialNumber",
-        _deletedDevice.mac_address AS "macAddress",
-        _deletedDevice.imei,
         _deletedDevice.status,
+        _deletedDevice.last_seen_at AS "lastSeenAt",
+        _deletedDevice.firmware_version AS "firmwareVersion",
         _deletedDevice.created_at AS "createdAt";
 END;
 $$ LANGUAGE plpgsql;
