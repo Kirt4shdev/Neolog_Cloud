@@ -1,0 +1,205 @@
+name: neologg_cloud
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: neologg_cloud_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-neologg_cloud_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/infrastructure/database/sql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neologg_cloud_network
+
+  # Valkey (Redis fork)
+  valkey:
+    image: valkey/valkey:8.1.3
+    container_name: neologg_cloud_valkey
+    restart: unless-stopped
+    command: valkey-server --appendonly yes --requirepass ${VALKEY_PASSWORD:-valkey_password}
+    ports:
+      - "127.0.0.1:${VALKEY_PORT:-6379}:6379" # Solo localhost
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "valkey-cli",
+          "-a",
+          "${VALKEY_PASSWORD:-valkey_password}",
+          "ping",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - neologg_cloud_network
+
+  # InfluxDB v2 (Time Series Database)
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: neologg_cloud_influxdb
+    restart: unless-stopped
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_ADMIN_USER:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD:-neologg93influx}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-neologg}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-neologg_data}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN:-neologg93token_change_this_in_production}
+    ports:
+      - "${INFLUXDB_PORT:-8086}:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neologg_cloud_network
+
+  # Mosquitto MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2.0-openssl
+    container_name: neologg_cloud_mosquitto
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+      - "${MQTT_WS_PORT:-9002}:9001"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    command: mosquitto -c /mosquitto/config/mosquitto.conf
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mosquitto_pub -h localhost -p 1883 -t 'health/check' -m 'ping' -q 0 -u neologg -P neologg93 || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - neologg_cloud_network
+
+  # Backend API (Node.js + Express + TypeScript)
+  backend:
+    build:
+      context: ../
+      dockerfile: backend/Dockerfile
+    container_name: neologg_cloud_backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8094}:8080"
+    env_file:
+      - backend.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/unprotected/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - neologg_cloud_network
+
+  # Frontend (React + Vite) - Development Mode with Hot Reload
+  frontend:
+    build:
+      context: ../
+      dockerfile: frontend/Dockerfile.dev
+    container_name: neologg_cloud_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5174}:5173"
+    volumes:
+      # Montar código fuente para hot reload
+      - ../frontend/src:/app/frontend/src
+      - ../frontend/public:/app/frontend/public
+      - ../frontend/index.html:/app/frontend/index.html
+      - ../frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ../frontend/tsconfig.json:/app/frontend/tsconfig.json
+      - ../frontend/tsconfig.app.json:/app/frontend/tsconfig.app.json
+      - ../frontend/tsconfig.node.json:/app/frontend/tsconfig.node.json
+      - ../frontend/.env:/app/frontend/.env
+      # Montar tipos del backend (necesarios para compilación)
+      - ../backend/src/core:/app/backend/src/core
+      - ../backend/src/shared:/app/backend/src/shared
+    environment:
+      - VITE_BACKEND_HOST=localhost
+      - VITE_BACKEND_PORT=8094
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - neologg_cloud_network
+
+  # Frontend Producción (React + Vite + Nginx) - Comentado, usar 'frontend' en desarrollo
+  # Descomentar para producción y comentar el servicio 'frontend' de arriba
+  # frontend-prod:
+  #   build:
+  #     context: ../
+  #     dockerfile: frontend/Dockerfile
+  #   container_name: neologg_cloud_frontend_prod
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${FRONTEND_PORT:-5174}:80"
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - neologg_cloud_network
+
+volumes:
+  postgres_data:
+    driver: local
+    name: neologg_cloud_postgres_data
+  valkey_data:
+    driver: local
+    name: neologg_cloud_valkey_data
+  influxdb_data:
+    driver: local
+    name: neologg_cloud_influxdb_data
+  influxdb_config:
+    driver: local
+    name: neologg_cloud_influxdb_config
+  mosquitto_data:
+    driver: local
+    name: neologg_cloud_mosquitto_data
+  mosquitto_logs:
+    driver: local
+    name: neologg_cloud_mosquitto_logs
+
+networks:
+  neologg_cloud_network:
+    driver: bridge
+    name: ${NETWORK_NAME:-neologg_cloud_network}

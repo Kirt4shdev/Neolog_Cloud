@@ -1,0 +1,21 @@
+{
+  "name": "@dilus-app-template/backend",
+  "version": "1.0.0",
+  "description": "dilus-app-template",
+  "main": "src/app.js",
+  "scripts": {
+    "transpile": "tsc -p tsconfig.build.json && tsc-alias && copyfiles -u 1 -f \"src/media/**/!(*.ts)\" dist/media",
+    "copy:package": "node ./scripts/copy-package.js",
+    "copy:env": "node ./scripts/copy-env.js",
+    "dev": "cross-env DEBUG=backend:dev tsx --watch ./src/app.ts",
+    "build": "rimraf ../dist/backend && npm-run-all transpile copy:package copy:env",
+    "start": "npm run build && node ./dist/app.js",
+    "database:create": "node ./scripts/create-database.js",
+    "database:init": "node ./scripts/init-database.js"
+  },
+  "author": {
+    "name": "Antonio Corbalán Navarro",
+    "email": "antoniocn1996@gmail.com"
+  },
+  "license": "ISC"
+}

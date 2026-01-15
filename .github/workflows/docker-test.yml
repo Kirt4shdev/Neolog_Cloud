@@ -1,0 +1,58 @@
+name: Docker Setup Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Docker services
+        run: npm run docker:up
+
+      - name: Wait for services
+        run: |
+          timeout 60 bash -c 'until docker exec dilus-postgres pg_isready -U postgres; do sleep 2; done'
+          timeout 30 bash -c 'until docker exec dilus-valkey valkey-cli -a valkey_password ping; do sleep 2; done'
+
+      - name: Check Docker setup
+        run: npm run docker:check
+
+      - name: Initialize database
+        run: npm run database:init
+
+      - name: Check backend can start
+        run: |
+          cp backend/.env.example backend/.env
+          timeout 30 npm run dev:backend &
+          sleep 10
+
+      - name: Test health endpoint
+        run: |
+          curl --fail http://localhost:3000/unprotected/health || exit 1
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.yml logs postgres
+          docker compose -f docker/docker-compose.yml logs valkey
+
+      - name: Cleanup
+        if: always()
+        run: npm run docker:down

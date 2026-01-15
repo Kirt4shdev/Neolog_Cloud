@@ -1,0 +1,22 @@
+# Frontend Dockerfile - Development with Hot Reload
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache git
+
+# Copiar package files
+COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+COPY backend/package*.json ./backend/
+
+# Instalar dependencias
+RUN npm install --legacy-peer-deps
+
+# Exponer puerto de Vite
+EXPOSE 5173
+
+# Comando para modo desarrollo con hot reload
+WORKDIR /app/frontend
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

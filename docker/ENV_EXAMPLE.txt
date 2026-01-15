@@ -1,0 +1,38 @@
+# Neologg Cloud - Docker Environment Variables
+
+# Network
+NETWORK_NAME=neologg_cloud_network
+
+# PostgreSQL
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=neologg_cloud_db
+POSTGRES_PORT=5433
+
+# Valkey (Redis fork)
+VALKEY_PASSWORD=valkey_password
+VALKEY_PORT=6379
+
+# InfluxDB v2
+INFLUXDB_ADMIN_USER=admin
+INFLUXDB_ADMIN_PASSWORD=neologg93influx
+INFLUXDB_ORG=neologg
+INFLUXDB_BUCKET=neologg_data
+INFLUXDB_ADMIN_TOKEN=neologg93token_change_this_in_production
+INFLUXDB_PORT=8086
+
+# MQTT (Mosquitto)
+MQTT_PORT=1883
+MQTT_WS_PORT=9002
+MQTT_USERNAME=neologg
+MQTT_PASSWORD=neologg93
+
+# Backend
+BACKEND_PORT=8094
+NODE_ENV=production
+JWT_SECRET=change_this_secret_in_production_neologg_cloud_2026
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5174
+
+# Frontend
+FRONTEND_PORT=5174

@@ -1,0 +1,140 @@
+.avatar-content {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-right: 1rem;
+}
+
+.avatar-circle {
+  border-radius: 100%;
+  background-color: whitesmoke;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.avatar-circle:hover {
+  cursor: pointer;
+  background-color: #e0e0e0;
+  transform: scale(1.03);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 200px;
+  z-index: 1001;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  padding: 16px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.dropdown-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dropdown-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2a5298;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.dropdown-name {
+  font-weight: 600;
+  color: #24292f;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.dropdown-email {
+  font-size: 12px;
+  color: #656d76;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e1e5e9;
+  margin: 8px 0;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #24292f !important;
+  transition: background-color 0.15s ease;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.dropdown-item:hover {
+  background: #f6f8fa;
+}
+
+.dropdown-icon {
+  width: 16px;
+  display: flex;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.dropdown-label {
+  color: #24292f;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.logout-item {
+  border-top: 1px solid #e1e5e9;
+  margin-top: 4px;
+  color: #d1242f;
+}
+
+.logout-item:hover {
+  background: #fff5f5;
+}

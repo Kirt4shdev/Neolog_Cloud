@@ -1,0 +1,554 @@
+{
+	"info": {
+		"_postman_id": "neologg-cloud-api",
+		"name": "NeoLogg Cloud API",
+		"description": "Colección completa de endpoints para NeoLogg Cloud - Plataforma IoT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8094",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "device_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login - SuperAdmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('access_token', jsonData.data.accessToken);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
+									"    console.log('Tokens guardados correctamente');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"superadmin@neologg.com\",\n  \"password\": \"SuperAdmin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/unprotected/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["unprotected", "auth", "login"]
+						},
+						"description": "Login con el usuario superadmin"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Test User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('access_token', jsonData.data.accessToken);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.data.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@test.com\",\n  \"password\": \"Test123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/unprotected/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["unprotected", "auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/unprotected/auth/refresh-token",
+							"host": ["{{base_url}}"],
+							"path": ["unprotected", "auth", "refresh-token"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "logout"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Neologg - Provisioning",
+			"item": [
+				{
+					"name": "Get Provisioning Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/provisioning/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "provisioning", "status"]
+						},
+						"description": "Obtiene el estado actual del provisioning (habilitado/deshabilitado, tiempo restante, credenciales)"
+					},
+					"response": []
+				},
+				{
+					"name": "Enable Provisioning",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isEnabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/provisioning/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "provisioning", "toggle"]
+						},
+						"description": "Activa el provisioning (genera credenciales temporales)"
+					},
+					"response": []
+				},
+				{
+					"name": "Disable Provisioning",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isEnabled\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/provisioning/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "provisioning", "toggle"]
+						},
+						"description": "Desactiva el provisioning"
+					},
+					"response": []
+				},
+				{
+					"name": "Provision Device (Unprotected)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"serialNumber\": \"NL8-2512001\",\n  \"macAddress\": \"00:1A:2B:3C:4D:5E\",\n  \"imei\": \"123456789012345\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/unprotected/neologg/provision",
+							"host": ["{{base_url}}"],
+							"path": ["unprotected", "neologg", "provision"]
+						},
+						"description": "Endpoint sin autenticación que llaman los dispositivos para aprovisionarse.\n\nCampos requeridos:\n- serialNumber: Serial Number del dispositivo (8-32 caracteres)\n- macAddress: MAC Address en formato XX:XX:XX:XX:XX:XX o XX-XX-XX-XX-XX-XX\n- imei: IMEI del dispositivo (15 dígitos)\n\nGeneración de credenciales:\n- License: SHA-256(SN + MAC + \"NEOLOGG\" + IMEI + \"93\")\n- Root Password: SHA-256(\"NEOLOGG\" + SN + \"TOPO\")\n- MQTT Username: SN\n- MQTT Password: SHA-256(\"NEOLOGG\" + SN + \"TOPO\" + IMEI)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Neologg - Devices",
+			"item": [
+				{
+					"name": "Get Device List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        pm.collectionVariables.set('device_id', jsonData.data[0].deviceId);",
+									"        console.log('Device ID guardado:', jsonData.data[0].deviceId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/devices",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "devices"]
+						},
+						"description": "Obtiene el listado de todos los dispositivos Neologg"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Device Detail",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/devices/{{device_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "devices", "{{device_id}}"]
+						},
+						"description": "Obtiene el detalle completo de un dispositivo específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Action - Restart",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"restart\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/devices/{{device_id}}/actions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "devices", "{{device_id}}", "actions"]
+						},
+						"description": "Envía comando de reinicio al dispositivo por MQTT"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Action - Sync Time",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"sync_time\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/devices/{{device_id}}/actions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "devices", "{{device_id}}", "actions"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Action - Rotate Logs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"rotate_logs\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/devices/{{device_id}}/actions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "devices", "{{device_id}}", "actions"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Action - Request Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"request_status\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/neologg/devices/{{device_id}}/actions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "neologg", "devices", "{{device_id}}", "actions"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users & Profiles",
+			"item": [
+				{
+					"name": "Get All Users Profiles",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users-profiles?limit=10&offset=0",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users-profiles"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/user/my-user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "my-user"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/unprotected/health",
+							"host": ["{{base_url}}"],
+							"path": ["unprotected", "health"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

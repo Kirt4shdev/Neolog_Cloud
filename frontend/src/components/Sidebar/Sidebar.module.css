@@ -1,0 +1,331 @@
+/* Sidebar Styles - NeoLogg Corporate Identity */
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  z-index: 900;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar.expanded {
+  width: 260px;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+}
+
+/* Toggle Button - Rediseñado completamente */
+.toggleButton {
+  position: fixed;
+  top: 36px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-secondary);
+  z-index: 1100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.toggleButton svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.toggleButton.toggleExpanded {
+  left: 248px;
+  padding-right: 1px;
+
+}
+
+.toggleButton.toggleCollapsed {
+  left: 67px;
+  padding-left: 1px;
+}
+
+.toggleButton:hover {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(0, 102, 255, 0.4);
+}
+
+
+
+.toggleButton.toggleCollapsed:hover {
+    left: 65px;
+  }
+
+  .toggleButton.toggleExpanded:hover {
+    left: 246px;
+  }
+  
+.toggleButton:hover svg {
+  width: 16px;
+  height: 16px;
+}
+/* 
+.toggleButton:active {
+  transform: scale(0.95);
+} */
+
+/* Logo Container - ALTURA FIJA 72px */
+.logoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  height: 72px;
+  flex-shrink: 0;
+}
+
+/* Logo - Wrapper que contiene N + texto */
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Logo N - Siempre visible */
+.logoN {
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+}
+
+/* Logo Text - "eoLogg Cloud" que se oculta al colapsar */
+.logoText {
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+  opacity: 1;
+  max-width: 200px;
+  transition: opacity 0.3s ease, max-width 0.3s ease;
+}
+
+.logoTextHidden {
+  opacity: 0;
+  max-width: 0;
+}
+
+/* Menu */
+.menu {
+  flex: 1;
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  background: rgba(0, 102, 255, 0.3);
+  border-radius: 2px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  margin: 0 0.75rem;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-align: left;
+  position: relative;
+}
+
+.collapsed .menuItem {
+  justify-content: center;
+  padding: 1rem;
+}
+
+.menuItem:hover {
+  background: var(--menu-hover);
+  color: #00d4ff;
+}
+
+.menuItem.active {
+  background: rgba(0, 102, 255, 0.15);
+  color: #0066ff;
+  font-weight: 600;
+  border: 1px solid rgba(0, 102, 255, 0.3);
+}
+
+.menuIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.menuLabel {
+  flex: 1;
+}
+
+.collapsed .menuLabel {
+  display: none;
+}
+
+/* Theme Toggle */
+.themeToggle {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.themeButton {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.collapsed .themeButton {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.collapsed .themeButton span {
+  display: none;
+}
+
+.themeButton:hover {
+  background: var(--menu-hover);
+  border-color: rgba(0, 102, 255, 0.3);
+  color: #00d4ff;
+}
+
+.themeButton svg {
+  flex-shrink: 0;
+}
+
+/* User Info */
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  min-height: 80px;
+}
+
+.collapsed .userInfo {
+  justify-content: center;
+  padding: 1.5rem 1rem;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+}
+
+.userDetails {
+  flex: 1;
+  overflow: hidden;
+}
+
+.collapsed .userDetails {
+  display: none;
+}
+
+.userName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar.expanded {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .sidebar.collapsed {
+    width: 0;
+    border-right: none;
+  }
+
+  .toggleButton {
+    display: none;
+  }
+}

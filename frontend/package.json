@@ -1,0 +1,18 @@
+{
+  "name": "@dilus-app-template/frontend",
+  "version": "1.0.0",
+  "description": "dilus-app-template",
+  "main": "src/main.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "rimraf ../dist/frontend && tsc -b tsconfig.build.json && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "author": {
+    "name": "Antonio Corbalán Navarro",
+    "email": "antoniocn1996@gmail.com"
+  },
+  "license": "ISC"
+}

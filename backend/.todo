@@ -1,0 +1,2 @@
+[] Actualizar last_used_at de la session en un middleware para detectar sessiones inactivas
+[] Mandar logs de la app y containers de influx y valkey a una base de datos NOSQL
