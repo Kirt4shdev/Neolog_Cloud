@@ -11,7 +11,8 @@
     "build": "rimraf ../dist/backend && npm-run-all transpile copy:package copy:env",
     "start": "npm run build && node ./dist/app.js",
     "database:create": "node ./scripts/create-database.js",
-    "database:init": "node ./scripts/init-database.js"
+    "database:init": "node ./scripts/init-database.js",
+    "database:migrate": "node ./scripts/run-migrations.js"
   },
   "author": {
     "name": "Antonio Corbalán Navarro",

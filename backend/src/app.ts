@@ -10,6 +10,7 @@ import { UnprotectedRouter } from "@presentation/routes/unprotected/UnprotectedR
 import { ApiRouter } from "@presentation/routes/ApiRouter";
 import { httpRequestLogger } from "@presentation/middlewares/performance/httpRequestLogger";
 import { GracefulShutdown } from "@shared/utils/GracefulShutdown";
+import { runMigrationsOnStartup } from "@shared/utils/runMigrations";
 // import TaskManager from "@infrastructure/schedulers/TaskManager";
 
 registerAllDependencies();
@@ -23,6 +24,9 @@ registerAllDependencies();
   // Nota: Se conecta al contenedor PostgreSQL definido en docker-compose.yml
   database.initPool();
   await database.isAlive();
+
+  // Run database migrations:
+  await runMigrationsOnStartup();
 
   // Init SMTP email sender:
   await smtpEmailSender.initTransporter();
