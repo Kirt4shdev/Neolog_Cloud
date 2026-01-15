@@ -6,6 +6,8 @@ const sqlDir = path.join(__dirname, "../src/infrastructure/database/sql");
 const utilsDir = path.join(sqlDir, "utils");
 const proceduresDir = path.join(sqlDir, "procedures");
 const outputFile = path.join(sqlDir, "database.sql");
+const initDir = path.join(sqlDir, "init");
+const initOutputFile = path.join(initDir, "01-database.sql");
 
 // Orden de archivos a combinar
 const filesInOrder = [
@@ -129,7 +131,20 @@ function createDatabaseFile() {
   fs.writeFileSync(outputFile, migrationContent, "utf8");
 
   console.log(`\n✅ Archivo database.sql creado exitosamente en:`);
-  console.log(`   ${outputFile}\n`);
+  console.log(`   ${outputFile}`);
+
+  // 4. Copiar al directorio init para auto-inicialización de Docker
+  const initDir = path.join(sqlDir, "init");
+  const initOutputFile = path.join(initDir, "01-database.sql");
+  
+  if (!fs.existsSync(initDir)) {
+    fs.mkdirSync(initDir, { recursive: true });
+  }
+  
+  fs.writeFileSync(initOutputFile, migrationContent, "utf8");
+  
+  console.log(`✅ Archivo copiado a init para Docker:`);
+  console.log(`   ${initOutputFile}\n`);
 }
 
 // Ejecutar
