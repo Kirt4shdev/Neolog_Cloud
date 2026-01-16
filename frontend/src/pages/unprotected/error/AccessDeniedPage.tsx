@@ -1,8 +1,20 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/auth/useAuth";
 import styles from "./styles/AccessDeniedPage.module.css";
 
 export function AccessDeniedPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const goToHome = () => {
+    // Redirigir según el rol del usuario
+    const userRoles = user?.roles || [];
+    if (userRoles.includes("super_admin") || userRoles.includes("admin")) {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/client");
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -24,7 +36,7 @@ export function AccessDeniedPage() {
           Contacta con el administrador si crees que esto es un error.
         </p>
         
-        <button onClick={() => navigate("/home")} className={styles.button}>
+        <button onClick={goToHome} className={styles.button}>
           Volver al Inicio
         </button>
       </div>

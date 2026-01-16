@@ -18,7 +18,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await userProfileServices.getMyProfile();
       setUser(profile);
       setIsAuthenticated(true);
-    } catch (error) {
+    } catch (error: any) {
+      // Extraer el mensaje de error de diferentes posibles rutas
+      const errorMessage = 
+        error?.response?.data?.error ||           // Backend: { error: "message" }
+        error?.response?.data?.message ||         // Backend: { message: "message" }
+        error?.response?.data?.error?.message ||  // Backend: { error: { message: "..." } }
+        error?.message;                           // JavaScript Error
+      
+      // Si el error contiene "already logged in", hacer logout y reintentar
+      if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes("already logged in")) {
+        try {
+          await authServices.logout();
+          // Intentar login nuevamente
+          await authServices.login({ email, password });
+          const profile = await userProfileServices.getMyProfile();
+          setUser(profile);
+          setIsAuthenticated(true);
+          return;
+        } catch (retryError) {
+          setIsAuthenticated(false);
+          throw retryError;
+        }
+      }
       setIsAuthenticated(false);
       throw error;
     }

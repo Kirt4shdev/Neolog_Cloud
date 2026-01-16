@@ -1,11 +1,29 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/auth/useAuth";
 import styles from "./styles/NotFoundPage.module.css";
 
 export function NotFoundPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const goBack = () => {
-    window.history.length > 1 ? navigate(-1) : navigate("/home");
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      goToHome();
+    }
+  };
+
+  const goToHome = () => {
+    // Redirigir según el rol del usuario
+    const userRoles = user?.roles || [];
+    if (userRoles.includes("super_admin") || userRoles.includes("admin")) {
+      navigate("/admin/dashboard");
+    } else if (user) {
+      navigate("/client");
+    } else {
+      navigate("/login");
+    }
   };
 
   return (
@@ -31,7 +49,7 @@ export function NotFoundPage() {
         </p>
         
         <div className={styles.buttonGroup}>
-          <button onClick={() => navigate("/home")} className={styles.primaryButton}>
+          <button onClick={goToHome} className={styles.primaryButton}>
             Ir al Inicio
           </button>
           <button onClick={goBack} className={styles.secondaryButton}>

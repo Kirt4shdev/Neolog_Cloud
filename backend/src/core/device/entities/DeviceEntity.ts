@@ -53,3 +53,15 @@ export const ProvisionedDeviceEntity = z.object({
 });
 
 export type ProvisionedDeviceEntity = z.infer<typeof ProvisionedDeviceEntity>;
+
+/**
+ * DeviceStatusEntity - Entidad simple para actualizaciones de estado MQTT
+ */
+export const DeviceStatusEntity = z.object({
+  deviceId: z.string().uuid().trim(),
+  serialNumber: z.string().trim(),
+  status: z.string().trim(),
+  lastSeenAt: z.coerce.date().nullable(),
+});
+
+export type DeviceStatusEntity = z.infer<typeof DeviceStatusEntity>;

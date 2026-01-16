@@ -1,311 +1,278 @@
-# 📡 Guía de Integración MQTT con LWT para Dispositivos NeoLogg
+# 📡 Guía MQTT para Firmware - Dispositivos NeoLogg
 
-## 🎯 Objetivo
+## 🔌 Conexión al Broker
 
-Esta guía explica cómo configurar tu firmware para usar **Last Will and Testament (LWT)** y mantener actualizado el estado del dispositivo en el backend de NeoLogg Cloud.
-
----
-
-## 📊 Arquitectura de Comunicación
-
-### Topics MQTT
-
-| Topic | Dirección | Propósito | Actualiza `last_seen_at` |
-|-------|-----------|-----------|--------------------------|
-| `production/neologg/{SN}/status` | Dispositivo → Backend | Estado online/offline (LWT) | ✅ Sí |
-| `production/neologg/{SN}/heartbeat` | Dispositivo → Backend | Ping periódico | ✅ Sí |
-| `production/neologg/{SN}/data` | Dispositivo → Backend | Datos de sensores | ✅ Sí |
-| `production/neologg/{SN}/license` | Dispositivo ↔ Backend | Validación de licencia | ✅ Sí |
-| `production/neologg/{SN}/actions` | Backend → Dispositivo | Comandos del backend | ❌ NO |
-
-**Importante:** El topic `/actions` es **enviado por el backend** hacia el dispositivo, por lo que **NO actualiza** `last_seen_at`.
+**Broker:** `mqtt.neologg.com` (o IP del servidor)  
+**Puerto:** `1883`  
+**Usuario:** Tu Serial Number (ej: `NL8-2512014`)  
+**Contraseña:** SHA-256 provisto al aprovisionar  
+**Keep-Alive:** 60 segundos
 
 ---
 
-## 🔧 Configuración LWT en el Firmware
+## 🛡️ Configurar LWT (Last Will and Testament)
 
-### 1. Credenciales MQTT
+**ANTES de conectar**, configura el LWT:
 
-Al aprovisionar un dispositivo, el backend devuelve:
+```
+Topic: production/neologg/{TU_SERIAL}/status
+Message: offlinelwt
+QoS: 1
+Retain: true
+```
 
-```json
-{
-  "serialNumber": "NL8-2512014",
-  "mqttUsername": "NL8-2512014",
-  "mqttPassword": "983de5cc6aadfe6691cff6c35d742905dff06aa8ba88bfad08126c445e788594"
+**Ejemplo para ESP32/Arduino:**
+```cpp
+// Configurar LWT antes de client.connect()
+client.setWill("production/neologg/NL8-2512014/status", "offlinelwt", 1, true);
+
+// Luego conectar
+if (client.connect("NL8-2512014", "tu_usuario", "tu_password")) {
+  Serial.println("Conectado!");
+  
+  // IMPORTANTE: Publicar online inmediatamente después de conectar
+  client.publish("production/neologg/NL8-2512014/status", "online", true);
+  
+  // Suscribirse a comandos
+  client.subscribe("production/neologg/NL8-2512014/actions");
 }
 ```
 
-### 2. Configuración de Conexión
+---
 
-**Broker:** `mosquitto` (dentro de Docker) o la IP/dominio de tu servidor  
-**Puerto:** `1883` (MQTT) o `9001` (WebSockets)  
-**Keep-Alive:** `60` segundos
+## 📤 Topics que DEBES PUBLICAR
 
-### 3. Configurar Last Will and Testament (LWT)
+### 1. `/status` - Estado del Dispositivo
 
-Antes de conectar, configura el LWT:
+**Cuándo publicar:**
+- `online` → Justo después de conectar ✅
+- `offline` → Antes de desconectar voluntariamente ✅
+- `offlinelwt` → **NO lo publiques tú**, lo envía el broker si pierdes conexión ⚠️
 
-```c
-// Ejemplo con librería PubSubClient (Arduino/ESP32)
-const char* mqtt_server = "tu-servidor.com";
-const int mqtt_port = 1883;
-const char* serial_number = "NL8-2512014";
+**Ejemplo:**
+```cpp
+// Al conectar
+client.publish("production/neologg/NL8-2512014/status", "online", true);
+
+// Antes de desconectar (apagado controlado)
+client.publish("production/neologg/NL8-2512014/status", "offline", true);
+client.disconnect();
+```
+
+**IMPORTANTE:** Usa texto plano **SIN comillas**. ✅ `online` ❌ `"online"`
+
+---
+
+### 2. `/heartbeat` - Ping de Vida (OPCIONAL)
+
+Si quieres enviar heartbeats manuales cada 30-60 segundos:
+
+```cpp
+client.publish("production/neologg/NL8-2512014/heartbeat", "ping");
+```
+
+> **Nota:** Con el LWT y el keep-alive de 60s, esto es **opcional**.
+
+---
+
+### 3. `/data` - Datos de Sensores
+
+**Formato:** JSON  
+**Frecuencia:** Según necesidad (cada 1-5 minutos)
+
+```cpp
+String payload = "{\"timestamp\":\"2026-01-16T08:30:00Z\",\"temperature\":23.5,\"humidity\":65.2,\"battery_voltage\":3.7}";
+client.publish("production/neologg/NL8-2512014/data", payload.c_str());
+```
+
+---
+
+### 4. `/license` - Validación de Licencia (OPCIONAL)
+
+Puedes enviar tu licencia SHA-256 al conectar:
+
+```cpp
+client.publish("production/neologg/NL8-2512014/license", "tu_licencia_sha256_aqui");
+```
+
+---
+
+## 📥 Topic al que DEBES SUSCRIBIRTE
+
+### `/actions` - Comandos del Sistema
+
+```cpp
+client.subscribe("production/neologg/NL8-2512014/actions");
+```
+
+**Mensajes que recibirás (JSON):**
+
+#### 1. Reiniciar Dispositivo
+```json
+{"action":"restart","payload":null,"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:** Ejecuta `ESP.restart()` o `NVIC_SystemReset()`
+
+---
+
+#### 2. Sincronizar Hora
+```json
+{"action":"sync_time","payload":{"timestamp":1737823800,"timezone":"UTC"},"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:** Ajusta tu RTC o timeClient con el timestamp provisto.
+
+---
+
+#### 3. Rotar Logs
+```json
+{"action":"rotate_logs","payload":null,"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:** Limpia o archiva tus logs internos.
+
+---
+
+#### 4. Solicitar Estado Completo
+```json
+{"action":"request_status","payload":null,"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:** Publica un mensaje en `/data` con toda tu información:
+
+```cpp
+String status = "{\"online\":true,\"firmware_version\":\"1.0.0\",\"uptime_seconds\":86400,\"free_memory\":45000,\"wifi_rssi\":-65,\"battery_voltage\":3.7,\"temperature\":23.5,\"humidity\":65.2,\"last_error\":null}";
+client.publish("production/neologg/NL8-2512014/data", status.c_str());
+```
+
+---
+
+## 📊 ¿Qué Actualiza `last_seen_at` en la Base de Datos?
+
+| Mensaje que TÚ Publicas | Actualiza `last_seen_at` |
+|--------------------------|--------------------------|
+| `/status` → `online` | ✅ SÍ |
+| `/status` → `offline` | ✅ SÍ |
+| `/status` → `offlinelwt` | ❌ NO (lo envía el broker, no tú) |
+| `/heartbeat` → `ping` | ✅ SÍ |
+| `/data` → JSON | ✅ SÍ |
+| `/license` → SHA-256 | ✅ SÍ |
+| `/actions` → respuesta | ❌ NO (los comandos los envía el servidor) |
+
+---
+
+## ✅ Checklist de Implementación
+
+- [ ] Configurar LWT **antes** de `client.connect()` con mensaje `offlinelwt`
+- [ ] Publicar `online` en `/status` **inmediatamente después** de conectar
+- [ ] Suscribirse a `production/neologg/{SERIAL}/actions`
+- [ ] Procesar comandos JSON recibidos en `/actions`
+- [ ] Enviar datos de sensores en `/data` periódicamente
+- [ ] (Opcional) Enviar heartbeat cada 30-60s
+- [ ] (Opcional) Enviar licencia SHA-256 al conectar
+- [ ] Publicar `offline` en `/status` antes de desconectar (si es apagado controlado)
+
+---
+
+## 🐛 Troubleshooting
+
+### ❌ "El dispositivo no aparece online en el panel"
+- Verifica que publicaste `online` (texto plano, sin comillas) en `/status`
+- Verifica que el topic sea `production/neologg/{TU_SERIAL}/status`
+
+### ❌ "El estado queda en offlinelwt aunque estoy conectado"
+- Publica `online` justo después de conectar
+- Asegúrate de que el keep-alive esté en 60s
+
+### ❌ "No recibo comandos en /actions"
+- Verifica que te suscribiste al topic `production/neologg/{TU_SERIAL}/actions`
+- Revisa que el callback de MQTT esté configurado correctamente
+
+---
+
+## 📚 Ejemplo Completo (ESP32 + PubSubClient)
+
+```cpp
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* mqtt_server = "mqtt.neologg.com";
 const char* mqtt_user = "NL8-2512014";
-const char* mqtt_pass = "983de5cc6aadfe6691cff6c35d742905dff06aa8ba88bfad08126c445e788594";
+const char* mqtt_pass = "tu_password_sha256";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+void callback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  
+  if (String(topic) == "production/neologg/NL8-2512014/actions") {
+    // Parsear JSON y ejecutar acción
+    Serial.println("Comando recibido: " + message);
+  }
+}
+
 void reconnect() {
   while (!client.connected()) {
-    Serial.println("Conectando a MQTT...");
+    Serial.print("Conectando a MQTT...");
     
-    // Construir el topic de status
-    String statusTopic = "production/neologg/" + String(serial_number) + "/status";
+    // Configurar LWT ANTES de conectar
+    client.setWill("production/neologg/NL8-2512014/status", "offlinelwt", 1, true);
     
-    // Conectar con LWT configurado
-    if (client.connect(
-          serial_number,           // Client ID
-          mqtt_user,              // Username
-          mqtt_pass,              // Password
-          statusTopic.c_str(),    // LWT Topic
-          1,                      // LWT QoS
-          true,                   // LWT Retain
-          "offline"               // LWT Message
-        )) {
+    if (client.connect("NL8-2512014", mqtt_user, mqtt_pass)) {
+      Serial.println("Conectado!");
       
-      Serial.println("✓ Conectado a MQTT");
+      // Publicar online inmediatamente
+      client.publish("production/neologg/NL8-2512014/status", "online", true);
       
-      // IMPORTANTE: Inmediatamente después de conectar, publicar "online"
-      client.publish(statusTopic.c_str(), "online", true);
-      
-      // Suscribirse a topics de acciones
-      String actionsTopic = "production/neologg/" + String(serial_number) + "/actions";
-      client.subscribe(actionsTopic.c_str());
-      
+      // Suscribirse a comandos
+      client.subscribe("production/neologg/NL8-2512014/actions");
     } else {
-      Serial.print("✗ Falló, rc=");
+      Serial.print("Falló, rc=");
       Serial.print(client.state());
       Serial.println(" Reintentando en 5 segundos...");
       delay(5000);
     }
   }
 }
-```
 
----
-
-## 📝 Funcionamiento del LWT
-
-### Flujo Normal (Conexión y Desconexión Correcta)
-
-```mermaid
-sequenceDiagram
-    participant D as Dispositivo
-    participant M as Mosquitto
-    participant B as Backend
-    
-    D->>M: CONNECT con LWT="offline"
-    M->>M: Guarda LWT (no lo publica aún)
-    D->>M: PUBLISH "online" en /status (retain)
-    M->>B: Mensaje "online"
-    B->>B: UPDATE devices SET status='online', last_seen_at=NOW()
-    
-    Note over D,M: Dispositivo funcionando...
-    
-    D->>M: DISCONNECT limpio
-    M->>B: Mensaje "offline" (LWT)
-    B->>B: UPDATE devices SET status='offline', last_seen_at=NOW()
-```
-
-### Flujo con Desconexión Inesperada
-
-```mermaid
-sequenceDiagram
-    participant D as Dispositivo
-    participant M as Mosquitto
-    participant B as Backend
-    
-    D->>M: CONNECT con LWT="offline"
-    D->>M: PUBLISH "online" en /status
-    M->>B: Mensaje "online"
-    B->>B: UPDATE status='online'
-    
-    Note over D: Dispositivo pierde conexión<br/>(WiFi, power, crash, etc.)
-    
-    Note over M: Keep-alive timeout (60s × 1.5 = 90s)
-    
-    M->>M: Detecta desconexión
-    M->>B: Publica LWT "offline" automáticamente
-    B->>B: UPDATE status='offline', last_seen_at=NOW()
-```
-
----
-
-## ⏱️ Keep-Alive y Heartbeat
-
-### Opciones de Implementación
-
-#### Opción 1: Solo LWT (Recomendado para dispositivos con batería)
-- El keep-alive MQTT maneja todo automáticamente
-- Menor consumo de red y energía
-- `last_seen_at` se actualiza con cualquier mensaje (data, license, etc.)
-
-```c
-void loop() {
-  client.loop(); // Mantiene la conexión MQTT (envía PINGs automáticos)
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin("tu_wifi_ssid", "tu_wifi_password");
   
-  // Enviar datos de sensores cada 5 minutos
-  if (millis() - lastDataSent > 300000) {
-    sendSensorData();
-    lastDataSent = millis();
-  }
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+  client.setKeepAlive(60);
 }
-```
 
-#### Opción 2: LWT + Heartbeat explícito (Opcional)
-- Para dispositivos que necesitan reportar estado frecuentemente
-- Útil para debugging
-
-```c
 void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
   client.loop();
   
-  // Heartbeat cada 30 segundos
-  if (millis() - lastHeartbeat > 30000) {
-    String heartbeatTopic = "production/neologg/" + String(serial_number) + "/heartbeat";
-    client.publish(heartbeatTopic.c_str(), "ping", false); // NO retain
-    lastHeartbeat = millis();
-  }
-  
-  // Datos de sensores cada 5 minutos
-  if (millis() - lastDataSent > 300000) {
-    sendSensorData();
-    lastDataSent = millis();
+  // Enviar datos cada 60 segundos
+  static unsigned long lastSend = 0;
+  if (millis() - lastSend > 60000) {
+    String payload = "{\"temperature\":23.5,\"humidity\":65.2}";
+    client.publish("production/neologg/NL8-2512014/data", payload.c_str());
+    lastSend = millis();
   }
 }
 ```
 
 ---
 
-## 🧪 Pruebas con MQTT Explorer
+## 🎯 Resumen Rápido
 
-### 1. Conectar a Mosquitto
+1. **Configura LWT** antes de conectar: `offlinelwt`
+2. **Publica `online`** después de conectar
+3. **Suscríbete** a `/actions`
+4. **Envía datos** a `/data` periódicamente
+5. **Publica `offline`** antes de apagar (opcional, el LWT lo hace automáticamente)
 
-- **Host:** `localhost` (si estás en el servidor) o la IP del servidor
-- **Port:** `1883`
-- **Username:** Usa el serial number del dispositivo (ej: `NL8-2512014`)
-- **Password:** El hash SHA-256 MQTT devuelto por el provisioning
-
-### 2. Configurar LWT en MQTT Explorer
-
-Antes de conectar, en la pestaña "Advanced":
-
-```
-Last Will Topic: production/neologg/NL8-2512014/status
-Last Will Message: offline
-QoS: 1
-Retain: true
-```
-
-### 3. Publicar "online" después de conectar
-
-Después de conectar exitosamente:
-
-```
-Topic: production/neologg/NL8-2512014/status
-Message: online
-QoS: 1
-Retain: true
-```
-
-### 4. Verificar en la Base de Datos
-
-```sql
-SELECT serial_number, status, last_seen_at 
-FROM devices 
-WHERE serial_number = 'NL8-2512014';
-```
-
-Deberías ver:
-```
- serial_number | status | last_seen_at           
----------------|--------|------------------------
- NL8-2512014   | online | 2026-01-15 16:20:35+00
-```
-
-### 5. Probar Desconexión
-
-En MQTT Explorer, haz clic en "Disconnect". Mosquitto publicará automáticamente el LWT (`offline`).
-
-Verifica de nuevo en la BD:
-```
- serial_number | status  | last_seen_at           
----------------|---------|------------------------
- NL8-2512014   | offline | 2026-01-15 16:22:18+00
-```
-
----
-
-## 📡 Actualización de `last_seen_at`
-
-El backend actualiza `last_seen_at` SOLO con mensajes que **vienen DEL dispositivo**:
-
-✅ **Actualiza `last_seen_at`:**
-- `production/neologg/{SN}/status` (online/offline)
-- `production/neologg/{SN}/heartbeat`
-- `production/neologg/{SN}/data`
-- `production/neologg/{SN}/license`
-
-❌ **NO actualiza `last_seen_at`:**
-- `production/neologg/{SN}/actions` (estos los envía el backend)
-
----
-
-## 🛠️ Troubleshooting
-
-### El dispositivo aparece como "offline" aunque esté conectado
-
-**Causa:** No publicaste "online" después de conectar.
-
-**Solución:** Inmediatamente después del CONNECT exitoso, publica:
-```c
-client.publish("production/neologg/NL8-2512014/status", "online", true);
-```
-
-### `last_seen_at` no se actualiza
-
-**Causa:** El dispositivo no está enviando ningún mensaje.
-
-**Solución:** Asegúrate de que el dispositivo publique periódicamente en:
-- `/heartbeat` (cada 30-60s), o
-- `/data` (cuando haya datos de sensores)
-
-### El LWT no se publica cuando el dispositivo se desconecta
-
-**Causa 1:** No configuraste el LWT antes del CONNECT.  
-**Solución:** Configura los parámetros LWT en la llamada a `client.connect()`.
-
-**Causa 2:** El retain flag del LWT está en `false`.  
-**Solución:** Usa `retain=true` en el LWT para que persista.
-
----
-
-## 📚 Recursos Adicionales
-
-- **Mosquitto Broker:** `mosquitto:1883` (dentro de Docker)
-- **ACL del dispositivo:** Solo puede publicar/suscribirse a `production/neologg/{SN}/#`
-- **Configuración de Mosquitto:** `max_keepalive = 60s`, `sys_interval = 10s`
-
----
-
-## 🎯 Resumen
-
-1. ✅ Configura LWT con `topic=/status`, `message=offline`, `retain=true`
-2. ✅ Conéctate con tus credenciales MQTT
-3. ✅ Inmediatamente después de conectar, publica `online` en `/status`
-4. ✅ Envía datos de sensores o heartbeats periódicamente
-5. ✅ Al desconectarte (limpia o forzada), Mosquitto publica automáticamente `offline`
-
-**El backend se encarga del resto** actualizando `status` y `last_seen_at` automáticamente. 🚀
+¡Listo! 🚀

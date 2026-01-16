@@ -165,28 +165,35 @@ class MQTTService {
   }
 
   /**
-   * Procesa cambios de estado LWT (online/offline)
+   * Procesa cambios de estado (online/offline/offlinelwt)
+   * offlinelwt se guarda como 'offline' pero sin actualizar last_seen_at
    */
   private async processStatus(
     serialNumber: string,
     message: string
   ): Promise<void> {
     try {
-      // Limpiar y validar: solo "online" u "offline" (sin comillas)
-      const status = message.trim().toLowerCase();
+      // Limpiar y validar: "online", "offline" u "offlinelwt" (sin comillas)
+      const statusRaw = message.trim().toLowerCase();
       
-      if (status !== "online" && status !== "offline") {
+      if (statusRaw !== "online" && statusRaw !== "offline" && statusRaw !== "offlinelwt") {
         Debug.warning(`Invalid status value: ${message}`);
         return;
       }
 
       const deviceRepository = container.resolve<IDeviceRepository>("IDeviceRepository");
 
+      // offlinelwt NO actualiza last_seen_at (lo envía el broker, no el equipo)
+      const shouldUpdateLastSeen = statusRaw !== "offlinelwt";
+      
+      // offlinelwt se guarda como 'offline' en la BD
+      const statusToSave = statusRaw === "offlinelwt" ? "offline" : statusRaw;
+
       // Actualizar el estado del dispositivo en la base de datos
       const { error } = await deviceRepository.updateDeviceStatus({
         serialNumber,
-        status: status as "online" | "offline",
-        timestamp: new Date(),
+        status: statusToSave as "online" | "offline",
+        timestamp: shouldUpdateLastSeen ? new Date() : undefined,
       });
 
       if (error) {
@@ -194,7 +201,9 @@ class MQTTService {
         return;
       }
 
-      Debug.success(`Device ${serialNumber} is now ${status}`);
+      Debug.success(
+        `Device ${serialNumber} is now ${statusToSave}${!shouldUpdateLastSeen ? " (via LWT, last_seen_at not updated)" : ""}`
+      );
     } catch (error: any) {
       Debug.error(`Error processing status: ${error.message}`);
     }

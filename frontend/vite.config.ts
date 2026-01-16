@@ -32,6 +32,7 @@ export default defineConfig({
 
       // Backend imports - Shared types, contracts, entities
       "@backend/core": path.resolve(__dirname, "../backend/src/core"),
+      "@core": path.resolve(__dirname, "../backend/src/core"),
     },
   },
 });

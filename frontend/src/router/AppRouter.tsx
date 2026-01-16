@@ -31,7 +31,11 @@ export function AppRouter() {
                     key={route.path}
                     path={route.path}
                     element={
-                      isAuthenticated ? <Navigate to="/home" replace /> : <Component />
+                      isAuthenticated ? (
+                        <Navigate to="/admin/dashboard" replace />
+                      ) : (
+                        <Component />
+                      )
                     }
                   />
                 );

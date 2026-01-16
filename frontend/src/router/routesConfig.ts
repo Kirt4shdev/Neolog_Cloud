@@ -1,6 +1,5 @@
 import { LoginPage } from "@/pages/unprotected/LoginPage";
 import { RegisterPage } from "@/pages/unprotected/RegisterPage";
-import { HomePage } from "@/pages/common/HomePage";
 import { AdminPage } from "@/pages/admin/AdminPage";
 import { DashboardPage } from "@/pages/admin/DashboardPage";
 import { DevicesPage } from "@/pages/admin/DevicesPage";
@@ -29,7 +28,6 @@ export const routesConfig: RouteConfig[] = [
   { path: "/register", component: RegisterPage, type: "public" },
 
   // Rutas comunes (cualquier usuario autenticado)
-  { path: "/home", component: HomePage, type: "common" },
   { path: "/common", component: CommonPage, type: "common" },
   { path: "/profile", component: ProfilePage, type: "common" },
   { path: "/help", component: HelpPage, type: "common" },

@@ -1,66 +1,107 @@
+/* 🎨 NeoLogg Corporate Identity - Login Page */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0a0a0a;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background orbs effect */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(0, 102, 255, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+  animation: rotate 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .login-form {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, rgba(17, 17, 17, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 102, 255, 0.25);
   width: 100%;
   max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .login-title {
   text-align: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 10px;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
 }
 
 .login-form input {
-  padding: 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   font-size: 16px;
+  color: #f5f5f7;
   transition: all 0.3s ease;
   outline: none;
 }
 
+.login-form input::placeholder {
+  color: #86868b;
+}
+
 .login-form input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #0066ff;
+  background: rgba(0, 102, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
 }
 
 .login-form input:disabled {
-  background-color: #f5f5f5;
+  background-color: rgba(255, 255, 255, 0.02);
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .login-form button {
-  padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
 }
 
 .login-form button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 102, 255, 0.5);
 }
 
 .login-form button:disabled {
@@ -70,55 +111,70 @@
 }
 
 .error {
-  padding: 12px;
-  background-color: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  color: #c33;
+  padding: 1rem;
+  background: rgba(255, 0, 102, 0.15);
+  border: 1px solid rgba(255, 0, 102, 0.3);
+  border-radius: 12px;
+  color: #ff0066;
   font-size: 14px;
   text-align: center;
+  font-weight: 500;
 }
 
 .register-link {
   text-align: center;
   font-size: 14px;
-  color: #666;
-  margin-top: 10px;
+  color: #86868b;
+  margin-top: 0.5rem;
 }
 
 .register-link span {
-  color: #667eea;
+  color: #00d4ff;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: underline;
+  text-decoration: none;
+  transition: all 0.3s ease;
 }
 
 .register-link span:hover {
-  color: #764ba2;
+  color: #0066ff;
+  text-decoration: underline;
 }
 
-/* Credenciales de prueba */
+/* Credenciales de prueba - NeoLogg Style */
 .test-credentials {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
-  border: 2px solid #667eea;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+  border: 1px solid rgba(0, 102, 255, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .test-credentials-title {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
-  color: #667eea;
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .test-credential-item {
-  background: white;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.test-credential-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(0, 102, 255, 0.3);
 }
 
 .test-credential-item:last-child {
@@ -126,49 +182,80 @@
 }
 
 .test-credential-label {
-  font-size: 12px;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #555;
-  margin-bottom: 8px;
+  color: #f5f5f7;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .test-credential-values {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .test-credential-input {
-  padding: 8px !important;
+  padding: 0.75rem !important;
   font-size: 13px !important;
   font-family: 'Courier New', monospace;
-  background: #f9f9f9 !important;
-  border: 1px solid #ddd !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  color: #00d4ff !important;
   cursor: pointer;
   user-select: all;
+  transition: all 0.3s ease;
 }
 
 .test-credential-input:hover {
-  background: #fff !important;
-  border-color: #667eea !important;
+  background: rgba(0, 102, 255, 0.1) !important;
+  border-color: #0066ff !important;
 }
 
 .test-credential-input:focus {
-  background: #fff !important;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+  background: rgba(0, 102, 255, 0.15) !important;
+  border-color: #00d4ff !important;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.3) !important;
 }
 
 .test-credential-button {
   width: 100%;
-  padding: 8px !important;
-  font-size: 12px !important;
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
-  margin-top: 4px;
+  padding: 0.65rem !important;
+  font-size: 0.75rem !important;
+  background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%) !important;
+  color: #0a0a0a !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border-radius: 8px !important;
+  margin-top: 0.25rem;
+  box-shadow: 0 2px 10px rgba(0, 255, 136, 0.3) !important;
 }
 
 .test-credential-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4) !important;
+  background: linear-gradient(135deg, #00d4ff 0%, #0066ff 100%) !important;
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.5) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .login-form {
+    padding: 2rem 1.5rem;
+  }
+  
+  .login-title {
+    font-size: 1.75rem;
+  }
+  
+  .test-credentials {
+    padding: 1rem;
+  }
 }

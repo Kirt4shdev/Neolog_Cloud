@@ -30,7 +30,14 @@ export function RegisterPage() {
     }
   }
 
-  if (isAuthenticated && user) return <Navigate to="/home" replace />;
+  if (isAuthenticated && user) {
+    // Redirigir según el rol del usuario
+    const userRoles = user.roles || [];
+    if (userRoles.includes("super_admin") || userRoles.includes("admin")) {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    return <Navigate to="/client" replace />;
+  }
 
   return (
     <div className={styles["register-container"]}>

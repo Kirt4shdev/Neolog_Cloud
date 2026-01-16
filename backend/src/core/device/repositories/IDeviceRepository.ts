@@ -9,6 +9,7 @@ import type {
   DeviceEntity,
   DeviceListEntity,
   ProvisionedDeviceEntity,
+  DeviceStatusEntity,
 } from "../entities/DeviceEntity";
 import type {
   DeviceTransmissionEntity,
@@ -103,10 +104,10 @@ export interface IDeviceRepository {
 
   /**
    * Actualiza el estado de un dispositivo basado en eventos MQTT (LWT)
-   * @param data - Serial number, status y timestamp
-   * @returns Promise<Result<DeviceListEntity>>
+   * @param data - Serial number, status y timestamp (si es undefined, no actualiza last_seen_at)
+   * @returns Promise<Result<DeviceStatusEntity>>
    */
   updateDeviceStatus(
     data: UpdateDeviceStatusContract
-  ): Promise<Result<DeviceListEntity>>;
+  ): Promise<Result<DeviceStatusEntity>>;
 }

@@ -1,6 +1,7 @@
--- UPDATE_DEVICE_STATUS
--- Actualiza el estado de un dispositivo basado en eventos MQTT (LWT)
--- Si _timestamp es NULL, NO actualiza last_seen_at (solo actualiza status)
+-- Migration: Agregar soporte para offlinelwt (no actualiza last_seen_at, guarda como 'offline')
+-- Created: 2026-01-16
+
+-- DROP Y RECREAR la función con soporte para timestamp NULL
 DROP FUNCTION IF EXISTS update_device_status(VARCHAR, VARCHAR, TIMESTAMPTZ) CASCADE;
 
 CREATE OR REPLACE FUNCTION update_device_status(
@@ -27,11 +28,11 @@ BEGIN
         RAISE EXCEPTION 'Device with serial number % not found', _serialNumber;
     END IF;
     
-    -- Si _timestamp es NULL, solo actualizar el status (NO tocar last_seen_at)
+    -- Si _timestamp es NULL, solo actualizar el status a 'offline' (NO tocar last_seen_at)
     IF _timestamp IS NULL THEN
         UPDATE devices
         SET 
-            status = 'offline',  -- Guardar como 'offline' en vez de 'offlinelwt'
+            status = 'offline',
             updated_at = NOW()
         WHERE serial_number = _serialNumber;
     ELSE
@@ -44,7 +45,7 @@ BEGIN
         WHERE serial_number = _serialNumber;
     END IF;
     
-    -- Devolver el dispositivo actualizado (con last_seen_at preservado)
+    -- Devolver el dispositivo actualizado
     RETURN QUERY
     SELECT 
         d.device_id AS "deviceId",

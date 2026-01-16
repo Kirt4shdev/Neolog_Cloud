@@ -4,6 +4,7 @@ import {
   DeviceEntity,
   DeviceListEntity,
   ProvisionedDeviceEntity,
+  DeviceStatusEntity,
 } from "@core/device/entities/DeviceEntity";
 import {
   DeviceTransmissionEntity,
@@ -189,16 +190,16 @@ export class DeviceRepository implements IDeviceRepository {
 
   public async updateDeviceStatus(
     data: import("@core/device/contracts/DeviceContract").UpdateDeviceStatusContract
-  ): Promise<Result<DeviceListEntity>> {
+  ): Promise<Result<DeviceStatusEntity>> {
     const { error, result } = await database.query({
       query: "SELECT * FROM update_device_status($1, $2, $3)",
       params: [
         data.serialNumber,
         data.status,
-        data.timestamp || new Date(),
+        data.timestamp ?? null, // Si es undefined, pasar null (NO actualizar last_seen_at)
       ],
       single: true,
-      schema: DeviceListEntity,
+      schema: DeviceStatusEntity,
       emptyResponseMessageError: "Device not found",
     });
 

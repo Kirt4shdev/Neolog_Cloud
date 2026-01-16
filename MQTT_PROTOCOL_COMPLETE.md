@@ -10,7 +10,7 @@
 **Configurar en LWT antes de conectar:**
 ```
 Topic: production/neologg/NL8-2512014/status
-Message: offline
+Message: offlinelwt
 QoS: 1
 Retain: true
 ```
@@ -21,11 +21,16 @@ online
 ```
 (Texto plano, SIN comillas)
 
-**Publicar antes de desconectar:**
+**Publicar antes de desconectar controladamente:**
 ```
 offline
 ```
 (Texto plano, SIN comillas)
+
+**Estados disponibles:**
+- `online`: El dispositivo se conectó correctamente ✅ Actualiza `last_seen_at`
+- `offline`: El dispositivo se apagó de forma controlada ✅ Actualiza `last_seen_at`
+- `offlinelwt`: El dispositivo perdió la conexión (enviado por el broker) ❌ NO actualiza `last_seen_at`
 
 ---
 
@@ -154,13 +159,13 @@ El dispositivo debe suscribirse a este topic para recibir comandos.
 
 | Topic | Dirección | Tipo de Dato | Retain | Actualiza `last_seen_at` |
 |-------|-----------|--------------|--------|--------------------------|
-| `/status` | Publicar | String: `online` o `offline` (sin comillas) | ✅ | ✅ |
+| `/status` | Publicar | String: `online`, `offline` o `offlinelwt` | ✅ | `online`/`offline` ✅, `offlinelwt` ❌ |
 | `/heartbeat` | Publicar | String: `ping` | ❌ | ✅ |
 | `/data` | Publicar | JSON | ❌ | ✅ |
 | `/license` | Publicar | String (SHA-256) | ❌ | ✅ |
 | `/actions` | Suscribirse | JSON | ❌ | ❌ |
 
-**Nota:** Cualquier mensaje que el dispositivo **publique** (excepto respuestas a `/actions`) actualiza `last_seen_at`.
+**Nota:** Cualquier mensaje que el dispositivo **publique** (excepto respuestas a `/actions`) actualiza `last_seen_at`, **EXCEPTO** `offlinelwt` que lo envía el broker.
 
 ---
 
@@ -183,10 +188,10 @@ Al aprovisionar un dispositivo, recibes:
 
 ## ✅ Checklist de Implementación
 
-- [ ] Configurar LWT antes de conectar (`/status` = `offline`)
+- [ ] Configurar LWT antes de conectar (`/status` = `offlinelwt`)
 - [ ] Publicar `online` en `/status` después de conectar
 - [ ] Suscribirse al topic `/actions`
 - [ ] Enviar heartbeat cada 30-60 segundos (opcional)
 - [ ] Enviar datos de sensores en `/data`
 - [ ] Procesar comandos recibidos en `/actions`
-- [ ] Publicar `offline` antes de desconectar (o dejar que LWT lo haga)
+- [ ] Publicar `offline` antes de desconectar (o dejar que LWT envíe `offlinelwt`)

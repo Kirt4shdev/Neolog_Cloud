@@ -7,7 +7,7 @@ export function NavigationLinks() {
   return (
     <ul className={styles["nav-links"]}>
       <li>
-        <button onClick={() => navigate("/home")}>Home</button>
+        <button onClick={() => navigate("/admin/dashboard")}>Dashboard</button>
       </li>
       <li>
         <button onClick={() => navigate("/admin")}>Admin</button>

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- DATABASE FILE - AUTO-GENERATED
--- Generated at: 2026-01-15T12:17:30.210Z
+-- Generated at: 2026-01-16T08:27:16.055Z
 -- ============================================================================
 
 
@@ -935,9 +935,9 @@ CREATE OR REPLACE FUNCTION delete_device(
 RETURNS TABLE (
     "deviceId" UUID,
     "serialNumber" VARCHAR,
-    "macAddress" VARCHAR,
-    imei VARCHAR,
     status VARCHAR,
+    "lastSeenAt" TIMESTAMPTZ,
+    "firmwareVersion" VARCHAR,
     "createdAt" TIMESTAMPTZ
 )
 AS $$
@@ -955,9 +955,9 @@ BEGIN
     RETURNING 
         device_id,
         serial_number,
-        mac_address,
-        devices.imei,
         devices.status,
+        last_seen_at,
+        firmware_version,
         created_at
     INTO _deletedDevice;
     
@@ -966,9 +966,9 @@ BEGIN
     SELECT 
         _deletedDevice.device_id AS "deviceId",
         _deletedDevice.serial_number AS "serialNumber",
-        _deletedDevice.mac_address AS "macAddress",
-        _deletedDevice.imei,
         _deletedDevice.status,
+        _deletedDevice.last_seen_at AS "lastSeenAt",
+        _deletedDevice.firmware_version AS "firmwareVersion",
         _deletedDevice.created_at AS "createdAt";
 END;
 $$ LANGUAGE plpgsql;
@@ -1331,28 +1331,60 @@ $$ LANGUAGE plpgsql;
 -- ============================================================================
 
 -- UPDATE_DEVICE_STATUS
-DROP FUNCTION IF EXISTS update_device_status(VARCHAR, VARCHAR) CASCADE;
+-- Actualiza el estado de un dispositivo basado en eventos MQTT (LWT)
+-- Si _timestamp es NULL, NO actualiza last_seen_at (solo actualiza status)
+DROP FUNCTION IF EXISTS update_device_status(VARCHAR, VARCHAR, TIMESTAMPTZ) CASCADE;
 
 CREATE OR REPLACE FUNCTION update_device_status(
     _serialNumber VARCHAR,
-    _status VARCHAR
+    _status VARCHAR,
+    _timestamp TIMESTAMPTZ DEFAULT NOW()
 )
-RETURNS VOID
+RETURNS TABLE (
+    "deviceId" UUID,
+    "serialNumber" VARCHAR,
+    status VARCHAR,
+    "lastSeenAt" TIMESTAMPTZ
+)
 AS $$
+DECLARE
+    _deviceExists BOOLEAN;
 BEGIN
-    -- Validar que el status sea válido
-    IF _status NOT IN ('online', 'offline', 'unknown') THEN
-        RAISE EXCEPTION 'Invalid status. Must be online, offline or unknown';
+    -- Verificar que el dispositivo existe
+    SELECT EXISTS(
+        SELECT 1 FROM devices WHERE serial_number = _serialNumber
+    ) INTO _deviceExists;
+    
+    IF NOT _deviceExists THEN
+        RAISE EXCEPTION 'Device with serial number % not found', _serialNumber;
     END IF;
     
-    UPDATE devices
-    SET status = _status,
-        updated_at = NOW()
-    WHERE serial_number = _serialNumber;
-    
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Device not found';
+    -- Si _timestamp es NULL, solo actualizar el status (NO tocar last_seen_at)
+    IF _timestamp IS NULL THEN
+        UPDATE devices
+        SET 
+            status = 'offline',  -- Guardar como 'offline' en vez de 'offlinelwt'
+            updated_at = NOW()
+        WHERE serial_number = _serialNumber;
+    ELSE
+        -- Actualizar el estado y last_seen_at
+        UPDATE devices
+        SET 
+            status = _status,
+            last_seen_at = _timestamp,
+            updated_at = NOW()
+        WHERE serial_number = _serialNumber;
     END IF;
+    
+    -- Devolver el dispositivo actualizado (con last_seen_at preservado)
+    RETURN QUERY
+    SELECT 
+        d.device_id AS "deviceId",
+        d.serial_number AS "serialNumber",
+        d.status,
+        d.last_seen_at AS "lastSeenAt"
+    FROM devices d
+    WHERE d.serial_number = _serialNumber;
 END;
 $$ LANGUAGE plpgsql;
 
