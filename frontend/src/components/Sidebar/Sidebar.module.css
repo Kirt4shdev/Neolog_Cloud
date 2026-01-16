@@ -53,7 +53,6 @@
 .toggleButton.toggleExpanded {
   left: 248px;
   padding-right: 1px;
-
 }
 
 .toggleButton.toggleCollapsed {
@@ -70,24 +69,18 @@
   box-shadow: 0 4px 16px rgba(0, 102, 255, 0.4);
 }
 
-
-
 .toggleButton.toggleCollapsed:hover {
-    left: 65px;
-  }
+  left: 65px;
+}
 
-  .toggleButton.toggleExpanded:hover {
-    left: 246px;
-  }
+.toggleButton.toggleExpanded:hover {
+  left: 246px;
+}
   
 .toggleButton:hover svg {
   width: 16px;
   height: 16px;
 }
-/* 
-.toggleButton:active {
-  transform: scale(0.95);
-} */
 
 /* Logo Container - ALTURA FIJA 72px */
 .logoContainer {
