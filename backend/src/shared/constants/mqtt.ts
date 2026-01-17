@@ -7,6 +7,7 @@ export const MQTT = {
   TOPIC_HEARTBEAT: "heartbeat",
   TOPIC_DATA: "data",
   TOPIC_LICENSE: "license",
+  TOPIC_INFO: "info",
   TOPIC_ACTIONS: "actions",
 
   // QoS levels
@@ -50,11 +51,21 @@ export const MqttTopics = {
     `${MQTT.TOPIC_PREFIX}/${serialNumber}/${MQTT.TOPIC_LICENSE}`,
 
   /**
-   * Topic de acciones para un dispositivo
-   * Formato: production/neologg/{SN}/actions
+   * Topic de información de hardware/firmware
+   * Formato: production/neologg/{SN}/info
    */
-  actions: (serialNumber: string) =>
-    `${MQTT.TOPIC_PREFIX}/${serialNumber}/${MQTT.TOPIC_ACTIONS}`,
+  info: (serialNumber: string) =>
+    `${MQTT.TOPIC_PREFIX}/${serialNumber}/${MQTT.TOPIC_INFO}`,
+
+  /**
+   * Topic de acción específica para un dispositivo
+   * Formato: production/neologg/{SN}/actions/{action}
+   * Ejemplos:
+   * - production/neologg/NL8-2512014/actions/restart
+   * - production/neologg/NL8-2512014/actions/sync_time
+   */
+  action: (serialNumber: string, action: string) =>
+    `${MQTT.TOPIC_PREFIX}/${serialNumber}/${MQTT.TOPIC_ACTIONS}/${action}`,
 
   /**
    * Pattern para suscribirse a todos los topics de todos los dispositivos

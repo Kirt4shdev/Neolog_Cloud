@@ -81,23 +81,59 @@ ping
 
 ---
 
-## 📥 Topics a los que se SUSCRIBE el Dispositivo
+### 5. `/info` - Información de Hardware y Firmware
+**Topic:** `production/neologg/{SerialNumber}/info`  
+**QoS:** 1  
+**Retain:** ✅ Sí (para mantener la última versión)
 
-### `/actions` - Comandos del Sistema
-**Topic:** `production/neologg/{SerialNumber}/actions`  
-**QoS:** 1
+**Mensaje (JSON):**
+```json
+{
+  "firmware_version": "1.0.0",
+  "hardware_version": "NL8-v2.1"
+}
+```
 
-El dispositivo debe suscribirse a este topic para recibir comandos.
+**Cuándo publicar:**
+- Al conectar por primera vez
+- Después de una actualización de firmware
+- Cuando cambie la versión de hardware (raro)
+
+**Ejemplo:**
+```
+Topic: production/neologg/NL8-2512014/info
+Mensaje: {"firmware_version":"1.0.0","hardware_version":"NL8-v2.1"}
+QoS: 1
+Retain: true
+```
 
 ---
 
-## ⚡ Comandos Disponibles (Recibidos en `/actions`)
+## 📥 Topics a los que se SUSCRIBE el Dispositivo
+
+### `/actions/{action}` - Comandos del Sistema
+**Topic Pattern:** `production/neologg/{SerialNumber}/actions/#`
+
+El dispositivo debe suscribirse a este pattern para recibir **todos** los comandos.
+
+**Topics específicos:**
+- `production/neologg/{SerialNumber}/actions/restart`
+- `production/neologg/{SerialNumber}/actions/sync_time`
+- `production/neologg/{SerialNumber}/actions/rotate_logs`
+- `production/neologg/{SerialNumber}/actions/request_status`
+
+**El tipo de acción ahora está en el topic, no en el JSON del mensaje.**
+
+---
+
+## ⚡ Comandos Disponibles (Recibidos en `/actions/*`)
 
 ### 1. Reiniciar Dispositivo
+**Topic:** `production/neologg/NL8-2512014/actions/restart`
+
+**Mensaje:**
 ```json
 {
-  "action": "restart",
-  "payload": null,
   "timestamp": "2026-01-15T16:30:00.000Z"
 }
 ```
@@ -105,24 +141,24 @@ El dispositivo debe suscribirse a este topic para recibir comandos.
 ---
 
 ### 2. Sincronizar Hora
+**Topic:** `production/neologg/NL8-2512014/actions/sync_time`
+
+**Mensaje:**
 ```json
 {
-  "action": "sync_time",
-  "payload": {
-    "timestamp": 1737823800,
-    "timezone": "UTC"
-  },
-  "timestamp": "2026-01-15T16:30:00.000Z"
+  "timestamp": 1737823800,
+  "timezone": "UTC"
 }
 ```
 
 ---
 
 ### 3. Rotar Logs
+**Topic:** `production/neologg/NL8-2512014/actions/rotate_logs`
+
+**Mensaje:**
 ```json
 {
-  "action": "rotate_logs",
-  "payload": null,
   "timestamp": "2026-01-15T16:30:00.000Z"
 }
 ```
@@ -130,10 +166,11 @@ El dispositivo debe suscribirse a este topic para recibir comandos.
 ---
 
 ### 4. Solicitar Estado Completo
+**Topic:** `production/neologg/NL8-2512014/actions/request_status`
+
+**Mensaje:**
 ```json
 {
-  "action": "request_status",
-  "payload": null,
   "timestamp": "2026-01-15T16:30:00.000Z"
 }
 ```
@@ -163,9 +200,12 @@ El dispositivo debe suscribirse a este topic para recibir comandos.
 | `/heartbeat` | Publicar | String: `ping` | ❌ | ✅ |
 | `/data` | Publicar | JSON | ❌ | ✅ |
 | `/license` | Publicar | String (SHA-256) | ❌ | ✅ |
-| `/actions` | Suscribirse | JSON | ❌ | ❌ |
+| `/info` | Publicar | JSON: `{"firmware_version", "hardware_version"}` | ✅ | ✅ |
+| `/actions/*` | Suscribirse | JSON | ❌ | ❌ |
 
-**Nota:** Cualquier mensaje que el dispositivo **publique** (excepto respuestas a `/actions`) actualiza `last_seen_at`, **EXCEPTO** `offlinelwt` que lo envía el broker.
+**Nota:** 
+- Cualquier mensaje que el dispositivo **publique** (excepto respuestas a `/actions/*`) actualiza `last_seen_at`, **EXCEPTO** `offlinelwt` que lo envía el broker.
+- El tipo de acción ahora está en el topic (`/actions/restart`, `/actions/sync_time`, etc.) no en el JSON.
 
 ---
 
@@ -190,8 +230,9 @@ Al aprovisionar un dispositivo, recibes:
 
 - [ ] Configurar LWT antes de conectar (`/status` = `offlinelwt`)
 - [ ] Publicar `online` en `/status` después de conectar
-- [ ] Suscribirse al topic `/actions`
+- [ ] **Publicar información de hardware/firmware en `/info` (con retain)**
+- [ ] **Suscribirse al pattern `/actions/#` para recibir todos los comandos**
 - [ ] Enviar heartbeat cada 30-60 segundos (opcional)
 - [ ] Enviar datos de sensores en `/data`
-- [ ] Procesar comandos recibidos en `/actions`
+- [ ] **Procesar comandos según el topic recibido** (`/actions/restart`, `/actions/sync_time`, etc.)
 - [ ] Publicar `offline` antes de desconectar (o dejar que LWT envíe `offlinelwt`)

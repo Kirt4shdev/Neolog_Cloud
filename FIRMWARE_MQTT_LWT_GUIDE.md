@@ -97,53 +97,167 @@ client.publish("production/neologg/NL8-2512014/license", "tu_licencia_sha256_aqu
 
 ---
 
+### 5. `/info` - Información de Hardware y Firmware
+
+**Formato:** JSON  
+**Cuándo:** Al conectar, después de actualizar firmware  
+**Retain:** ✅ Sí
+
+```cpp
+String info = "{\"firmware_version\":\"1.0.0\",\"hardware_version\":\"NL8-v2.1\"}";
+client.publish("production/neologg/NL8-2512014/info", info.c_str(), true); // retain=true
+```
+
+**Importante:** Usa `retain=true` para que el servidor siempre tenga la última versión.
+
+---
+
 ## 📥 Topic al que DEBES SUSCRIBIRTE
 
-### `/actions` - Comandos del Sistema
+### `/actions/#` - Comandos del Sistema
 
 ```cpp
-client.subscribe("production/neologg/NL8-2512014/actions");
+// Suscribirse al pattern para recibir TODAS las acciones
+client.subscribe("production/neologg/NL8-2512014/actions/#");
 ```
 
-**Mensajes que recibirás (JSON):**
+**Topics que recibirás:**
+- `production/neologg/NL8-2512014/actions/restart`
+- `production/neologg/NL8-2512014/actions/sync_time`
+- `production/neologg/NL8-2512014/actions/rotate_logs`
+- `production/neologg/NL8-2512014/actions/request_status`
 
-#### 1. Reiniciar Dispositivo
-```json
-{"action":"restart","payload":null,"timestamp":"2026-01-16T08:30:00.000Z"}
-```
-
-**Qué hacer:** Ejecuta `ESP.restart()` o `NVIC_SystemReset()`
+**El tipo de acción ahora está en el topic, no en el JSON.**
 
 ---
 
-#### 2. Sincronizar Hora
-```json
-{"action":"sync_time","payload":{"timestamp":1737823800,"timezone":"UTC"},"timestamp":"2026-01-16T08:30:00.000Z"}
-```
+## ⚡ Cómo Procesar los Comandos
 
-**Qué hacer:** Ajusta tu RTC o timeClient con el timestamp provisto.
-
----
-
-#### 3. Rotar Logs
-```json
-{"action":"rotate_logs","payload":null,"timestamp":"2026-01-16T08:30:00.000Z"}
-```
-
-**Qué hacer:** Limpia o archiva tus logs internos.
-
----
-
-#### 4. Solicitar Estado Completo
-```json
-{"action":"request_status","payload":null,"timestamp":"2026-01-16T08:30:00.000Z"}
-```
-
-**Qué hacer:** Publica un mensaje en `/data` con toda tu información:
+### En el callback de MQTT:
 
 ```cpp
-String status = "{\"online\":true,\"firmware_version\":\"1.0.0\",\"uptime_seconds\":86400,\"free_memory\":45000,\"wifi_rssi\":-65,\"battery_voltage\":3.7,\"temperature\":23.5,\"humidity\":65.2,\"last_error\":null}";
-client.publish("production/neologg/NL8-2512014/data", status.c_str());
+void callback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  
+  String topicStr = String(topic);
+  
+  // Extraer la acción del topic
+  // Ejemplo: "production/neologg/NL8-2512014/actions/restart" -> "restart"
+  int lastSlash = topicStr.lastIndexOf('/');
+  String action = topicStr.substring(lastSlash + 1);
+  
+  Serial.println("Comando recibido: " + action);
+  Serial.println("Payload: " + message);
+  
+  // Procesar según el tipo de acción
+  if (action == "restart") {
+    handleRestart();
+  } else if (action == "sync_time") {
+    handleSyncTime(message);
+  } else if (action == "rotate_logs") {
+    handleRotateLogs();
+  } else if (action == "request_status") {
+    handleRequestStatus();
+  }
+}
+```
+
+---
+
+## 📋 Handlers para cada Comando
+
+### 1. Reiniciar Dispositivo
+**Topic recibido:** `production/neologg/NL8-2512014/actions/restart`
+
+**Payload:**
+```json
+{"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:**
+```cpp
+void handleRestart() {
+  Serial.println("Reiniciando dispositivo...");
+  delay(1000);
+  ESP.restart(); // o NVIC_SystemReset() en STM32
+}
+```
+
+---
+
+### 2. Sincronizar Hora
+**Topic recibido:** `production/neologg/NL8-2512014/actions/sync_time`
+
+**Payload:**
+```json
+{"timestamp":1737823800,"timezone":"UTC"}
+```
+
+**Qué hacer:**
+```cpp
+void handleSyncTime(String payload) {
+  // Parsear JSON
+  DynamicJsonDocument doc(256);
+  deserializeJson(doc, payload);
+  
+  long timestamp = doc["timestamp"];
+  String timezone = doc["timezone"];
+  
+  // Ajustar RTC o timeClient
+  timeClient.setEpochTime(timestamp);
+  Serial.println("Hora sincronizada: " + String(timestamp));
+}
+```
+
+---
+
+### 3. Rotar Logs
+**Topic recibido:** `production/neologg/NL8-2512014/actions/rotate_logs`
+
+**Payload:**
+```json
+{"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:**
+```cpp
+void handleRotateLogs() {
+  // Limpiar o archivar logs
+  Serial.println("Rotando logs...");
+  // clearLogs();
+}
+```
+
+---
+
+### 4. Solicitar Estado Completo
+**Topic recibido:** `production/neologg/NL8-2512014/actions/request_status`
+
+**Payload:**
+```json
+{"timestamp":"2026-01-16T08:30:00.000Z"}
+```
+
+**Qué hacer:**
+```cpp
+void handleRequestStatus() {
+  String status = "{";
+  status += "\"online\":true,";
+  status += "\"firmware_version\":\"1.0.0\",";
+  status += "\"uptime_seconds\":" + String(millis() / 1000) + ",";
+  status += "\"free_memory\":" + String(ESP.getFreeHeap()) + ",";
+  status += "\"wifi_rssi\":" + String(WiFi.RSSI()) + ",";
+  status += "\"battery_voltage\":3.7,";
+  status += "\"temperature\":23.5,";
+  status += "\"humidity\":65.2,";
+  status += "\"last_error\":null";
+  status += "}";
+  
+  client.publish("production/neologg/NL8-2512014/data", status.c_str());
+}
 ```
 
 ---
@@ -158,6 +272,7 @@ client.publish("production/neologg/NL8-2512014/data", status.c_str());
 | `/heartbeat` → `ping` | ✅ SÍ |
 | `/data` → JSON | ✅ SÍ |
 | `/license` → SHA-256 | ✅ SÍ |
+| `/info` → JSON | ✅ SÍ |
 | `/actions` → respuesta | ❌ NO (los comandos los envía el servidor) |
 
 ---
@@ -166,8 +281,9 @@ client.publish("production/neologg/NL8-2512014/data", status.c_str());
 
 - [ ] Configurar LWT **antes** de `client.connect()` con mensaje `offlinelwt`
 - [ ] Publicar `online` en `/status` **inmediatamente después** de conectar
-- [ ] Suscribirse a `production/neologg/{SERIAL}/actions`
-- [ ] Procesar comandos JSON recibidos en `/actions`
+- [ ] **Publicar versiones de firmware/hardware en `/info` con retain=true**
+- [ ] **Suscribirse al pattern `production/neologg/{SERIAL}/actions/#`**
+- [ ] **Procesar comandos según el topic recibido** (`/actions/restart`, `/actions/sync_time`, etc.)
 - [ ] Enviar datos de sensores en `/data` periódicamente
 - [ ] (Opcional) Enviar heartbeat cada 30-60s
 - [ ] (Opcional) Enviar licencia SHA-256 al conectar
@@ -226,10 +342,14 @@ void reconnect() {
     if (client.connect("NL8-2512014", mqtt_user, mqtt_pass)) {
       Serial.println("Conectado!");
       
-      // Publicar online inmediatamente
+      // 1. Publicar online inmediatamente
       client.publish("production/neologg/NL8-2512014/status", "online", true);
       
-      // Suscribirse a comandos
+      // 2. Publicar información de hardware/firmware (IMPORTANTE)
+      String info = "{\"firmware_version\":\"1.0.0\",\"hardware_version\":\"NL8-v2.1\"}";
+      client.publish("production/neologg/NL8-2512014/info", info.c_str(), true);
+      
+      // 3. Suscribirse a comandos
       client.subscribe("production/neologg/NL8-2512014/actions");
     } else {
       Serial.print("Falló, rc=");
@@ -271,8 +391,9 @@ void loop() {
 
 1. **Configura LWT** antes de conectar: `offlinelwt`
 2. **Publica `online`** después de conectar
-3. **Suscríbete** a `/actions`
-4. **Envía datos** a `/data` periódicamente
-5. **Publica `offline`** antes de apagar (opcional, el LWT lo hace automáticamente)
+3. **Publica `/info`** con firmware_version y hardware_version (retain=true)
+4. **Suscríbete** a `/actions`
+5. **Envía datos** a `/data` periódicamente
+6. **Publica `offline`** antes de apagar (opcional, el LWT lo hace automáticamente)
 
 ¡Listo! 🚀

@@ -121,6 +121,10 @@ class MQTTService {
           await this.processLicense(serialNumber, message);
           break;
 
+        case MQTT.TOPIC_INFO:
+          await this.processInfo(serialNumber, message);
+          break;
+
         default:
           Debug.warning(`Unknown message type: ${messageType}`);
           await this.logUnknownTransmission(serialNumber, topic, message);
@@ -375,18 +379,68 @@ class MQTTService {
   /**
    * Publica una acción a un dispositivo específico
    */
+  /**
+   * Procesa información de hardware/firmware recibida de un dispositivo
+   */
+  private async processInfo(
+    serialNumber: string,
+    message: string
+  ): Promise<void> {
+    try {
+      const deviceRepository = container.resolve<IDeviceRepository>("IDeviceRepository");
+
+      // Parsear el JSON con la información
+      const info = JSON.parse(message);
+      const { firmware_version, hardware_version } = info;
+
+      if (!firmware_version && !hardware_version) {
+        Debug.warning(`Info message for ${serialNumber} missing both firmware_version and hardware_version`);
+        return;
+      }
+
+      // TODO: Actualizar firmware_version y hardware_version en la BD
+      // Por ahora solo lo registramos en los logs
+      Debug.success(
+        `Device ${serialNumber} info updated: firmware=${firmware_version || 'N/A'}, hardware=${hardware_version || 'N/A'}`
+      );
+
+      // Actualizar estado a online y last_seen_at
+      await deviceRepository.updateDeviceStatus({
+        serialNumber,
+        status: "online",
+        timestamp: new Date(),
+      });
+
+      // Registrar la transmisión
+      await deviceRepository.logTransmission({
+        serialNumber,
+        topic: MqttTopics.info(serialNumber),
+        payload: message,
+        messageType: "data",
+      });
+    } catch (error: any) {
+      Debug.error(`Error processing info: ${error.message}`);
+    }
+  }
+
+  /**
+   * Publica una acción para un dispositivo
+   * Topic: production/neologg/{SN}/actions/{action}
+   * El payload se envía como JSON directamente (sin wrapper "action")
+   */
   public async publishAction(
     serialNumber: string,
     action: string,
     payload?: any
   ): Promise<Result<void>> {
-    const topic = MqttTopics.actions(serialNumber);
-    const message = JSON.stringify({
-      action,
-      payload: payload || null,
-      timestamp: new Date().toISOString(),
-    });
+    const topic = MqttTopics.action(serialNumber, action);
+    
+    // El mensaje es el payload directamente, o un objeto con timestamp si no hay payload
+    const message = JSON.stringify(
+      payload || { timestamp: new Date().toISOString() }
+    );
 
+    Debug.info(`Publishing action '${action}' to ${topic}`);
     return this.publishMessage(topic, message);
   }
 
